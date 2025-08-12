@@ -1,5 +1,6 @@
 import numpy as np
 from dataclasses import dataclass
+from .constants import Bases
 
 
 @dataclass
@@ -11,16 +12,24 @@ class OrbitalElements:
     argument_of_perigee: float
     true_anomaly: float
 
-@dataclass
-class Bases(frozen=True):
-    i: np.typing.NDArray = np.array([1, 0, 0]) 
-    j: np.typing.NDArray = np.array([0, 1, 0]) 
-    k: np.typing.NDArray = np.array([0, 0, 1]) 
+
+def get_orbital_elements(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> OrbitalElements:
+    orbital_elements = OrbitalElements(
+        major_axis = get_major_axis(r, v, mu),
+        eccentricity = get_eccentricity(r, v, mu),
+        inclination = get_inclination(r, v, mu),
+        ascending_node = get_ascending_node(r, v, mu),
+        argument_of_perigee = get_argument_of_perigee(r, v, mu),
+        true_anomaly = get_true_anormaly(r, v, mu)
+    )
+
+    return orbital_elements
 
 
 def get_major_axis(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     r_norm = np.linalg.norm(r)
-    eps = (r_norm^2)/2 - (mu/r_norm)
+    v_norm = np.linalg.norm(v)
+    eps = (v_norm**2)/2 - (mu/r_norm)
     a = -mu/(2*eps)
 
     return a
@@ -28,7 +37,7 @@ def get_major_axis(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> flo
 
 def get_eccentricity(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     e = get_eccentricity_vector(r, v, mu)
-    e_norm = np.linalg.norm(e_norm)
+    e_norm = np.linalg.norm(e)
 
     return e_norm
 
