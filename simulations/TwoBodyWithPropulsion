@@ -4,65 +4,101 @@ import matplotlib.pyplot as plt
 from utils.GetClassicOrbitalElements import *
 from utils.visualization import plot_classic_orbital_elements
 
-r0 = np.array([10016.34, -17012.52, 7899.28])
-v0 = np.array([2.5, -1.05, 3.88])
-t = np.linspace(0, 60000, 100000)
-earth_radius = 6378.0  # km
-mu = 3.986e5  # km³/s²
+# ----------------- dados do problema -----------------
+r = np.array([10016.34, -17012.52, 7899.28])  # km
+v = np.array([2.5, -1.05, 3.88])              # km/s
+t = np.linspace(0, 60000, 100000)             # s
+earth_radius = 6378.0                          # km
+mu = 3.986e5                                   # km^3/s^2
 
-# Acelerações nas direções V (tangencial) e H (cross-track)
-aV = 0.0001  # km/s² (exemplo)
-aH = 0.00005 # km/s² (exemplo)
+# ----------------- perfil de empuxo em V e H -----------------
 
+aV_const = 2.0e-6   # 2 micro-km/s^2 = 2e-3 mm/s^2 ~ 2e-6 km/s^2 (
+aH_const = 0.0e-6   # sem deflexão fora do plano 
+
+def thrust_RVH(t, x):
+    """
+    Retorna (aR, aV, aH) em km/s^2.
+    Se quiser janelas de queima, troque pelo que desejar (e.g., if t1<=t<=t2: ...).
+    """
+    aR = 0.0
+    aV = aV_const
+    aH = aH_const
+    return aR, aV, aH
+
+# (OPCIONAL) Modelo por empuxo T, massa m e Isp:
+# Se preferir comandar por T [N], m [kg], Isp [s], use isto para obter aV/aH = (T/m)/1000 * cos/sin(gama)
+# Lembre: 1 m/s^2 = 1e-3 km/s^2
+# g0 = 9.80665             # m/s^2
+# T  = 0.1                 # N (exemplo)
+# m0 = 50.0                # kg (exemplo)
+# Isp = 2000.0             # s (exemplo)
+# def thrust_RVH(t, x):
+#     m = m0               # constante aqui; se quiser propagar m, adicione um 7º estado com m_dot = -T/(Isp*g0)
+#     a = (T/m) * 1e-3     # km/s^2
+#     # distribua a entre V e H por um ângulo de inclinação do empuxo, p.ex. aV=a*cos(phi), aH=a*sin(phi)
+#     phi = 0.0            # rad
+#     return 0.0, a*np.cos(phi), a*np.sin(phi)
+
+# ----------------- dinâmica com empuxo em V e H -----------------
 def x_dot(t, x):
+    """
+    x = [rx, ry, rz, vx, vy, vz] (km, km/s)
+    gravidade de 2 corpos + empuxo em V (tangencial) e H (out-of-plane).
+    """
+    rx, ry, rz, vx, vy, vz = x
     r_vec = x[0:3]
     v_vec = x[3:6]
-    
     r_norm = np.linalg.norm(r_vec)
-    
-    # Gravidade (problema de dois corpos)
-    a_grav = -(mu / r_norm**3) * r_vec
-    
-    # Vetores unitários do sistema RSW
-    eR = r_vec / r_norm
+
+    # aceleração gravitacional
+    a_grav = -(mu / r_norm**3) * r_vec  # km/s^2
+
+    # base R-V-H (RSW/RTN) instantânea
+    Rhat = r_vec / r_norm
     h_vec = np.cross(r_vec, v_vec)
-    eW = h_vec / np.linalg.norm(h_vec)
-    eS = np.cross(eW, eR)
-    
-    # Aceleração de propulsão nas direções V (along-track) e H (cross-track)
-    a_thrust = aV * eS + aH * eW
-    
-    # Derivadas
+    h_norm = np.linalg.norm(h_vec)
+    # proteção para casos degenerados
+    if h_norm < 1e-12:
+        Hhat = np.array([0.0, 0.0, 1.0])
+    else:
+        Hhat = h_vec / h_norm
+    Vhat = np.cross(Hhat, Rhat)  # já é unitário se Rhat e Hhat forem ortonormais
+
+    # aceleração de empuxo em R-V-H
+    aR, aV, aH = thrust_RVH(t, x)
+    a_thrust = aR*Rhat + aV*Vhat + aH*Hhat  # km/s^2
+
+    # dinâmica
     xdot = np.zeros_like(x)
     xdot[0:3] = v_vec
     xdot[3:6] = a_grav + a_thrust
-    
     return xdot
 
-x0 = np.concatenate((r0, v0)) 
-sol = solve_ivp(x_dot, (t[0], t[-1]), x0, t_eval=t, method='RK45')
-
+# ----------------- integração -----------------
+x0 = np.concatenate((r, v))
+sol = solve_ivp(x_dot, (t[0], t[-1]), x0, t_eval=t, method='RK45', rtol=1e-9, atol=1e-12)
 X = sol.y
 
-orbital_elementss = []
-for i in range(X.shape[1]):
-    x_state = X[:, i]
-    orbital_elementss.append(get_orbital_elements(x_state[0:3], x_state[3:6], mu))
-
-# Plot 3D
-plt.figure()
+fig = plt.figure()
 ax = plt.axes(projection='3d')
-u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-x_sphere = earth_radius * np.cos(u)*np.sin(v)
-y_sphere = earth_radius * np.sin(u)*np.sin(v)
-z_sphere = earth_radius * np.cos(v)
-ax.plot_wireframe(x_sphere, y_sphere, z_sphere, color="r")
-ax.plot3D(X[0, :], X[1, :], X[2, :], 'b-')
-ax.set_title('Orbit Propagation with Thrust in V and H')
+u, vv = np.mgrid[0:2*np.pi:40j, 0:np.pi:20j]
+xe = earth_radius * np.cos(u)*np.sin(vv)
+ye = earth_radius * np.sin(u)*np.sin(vv)
+ze = earth_radius * np.cos(vv)
+ax.plot_wireframe(xe, ye, ze, color="r", linewidth=0.3, alpha=0.4)
+ax.plot3D(X[0, :], X[1, :], X[2, :], 'b-', lw=1.2)
+ax.set_title('Orbit Propagation com Empuxo em V e H')
 ax.set_box_aspect([1,1,1])
 plt.show()
 
+
+orbital_elementss = []
+for k in range(X.shape[1]):
+     xk = X[:, k]
+     orbital_elementss.append(get_orbital_elements(xk[0:3], xk[3:6], mu))
 plot_classic_orbital_elements(t, orbital_elementss)
+
 
 
 
