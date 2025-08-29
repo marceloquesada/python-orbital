@@ -8,13 +8,12 @@ from utils.visualization import plot_classic_orbital_elements
 r = np.array([10016.34, -17012.52, 7899.28])
 v = np.array([2.5, -1.05, 3.88])
 
-# >>> ADIÇÃO: tempo mais longo para evidenciar a espiral (antes: 0..60000)
-t = np.linspace(0, 2_000_000, 20_000)  # ~23 dias
+t = np.linspace(0, 20000, 2000000) 
 
 earth_radius = 6378.0  # in km
 mu = 3.986e5
 
-# >>> ADIÇÃO: parâmetros do propulsor e massa (com unidades corretas)
+
 T   = 1.1e-3       # N  (1.1 mN)
 Isp = 2150.0       # s
 g0  = 9.80665      # m/s^2
@@ -34,7 +33,7 @@ def x_dot(t, x):
     # gravidade 2-corpos
     xdot[3:6] = -(mu/(np.linalg.norm(x[0:3]))**3)*x[0:3]
 
-    # >>> ADIÇÃO: empuxo contínuo tangencial + variação de massa (unidades coerentes)
+
     u = throttle(t, x)             # 0..1
     v_vec = x[3:6]
     vnorm = np.linalg.norm(v_vec)
@@ -53,7 +52,7 @@ def x_dot(t, x):
 
     return xdot
 
-# >>> ADIÇÃO: estado inicial agora inclui a massa m0
+
 x0 = np.concatenate((r, v, [m0]))
 
 sol = solve_ivp(x_dot, (t[0], t[-1]), x0, t_eval=t, method='RK45', rtol=1e-9, atol=1e-12)
