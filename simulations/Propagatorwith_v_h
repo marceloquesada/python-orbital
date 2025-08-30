@@ -14,7 +14,7 @@ thrust = 1.1e-3
 
 # ===================== ADIÇÕES (H e janelas em anomalia verdadeira) =====================
 # Acelerações efetivas (defina direto em km/s^2 se quiser "massa desprezível")
-m_sat = 12.0
+m_sat = 20.0
 aV = (thrust/m_sat)/1000.0   # km/s^2, empuxo tangencial V (deixe ligado p/ espiral)  ← pode comentar se quiser V=off
 aH = (thrust/m_sat/1000.0)                  # km/s^2, empuxo em H (normal ao plano) durante a janela
 
