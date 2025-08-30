@@ -1,1 +1,15 @@
 
+
+
+
+def _ae_from_rv(r_vec, v_vec, mu):
+    rnorm = np.linalg.norm(r_vec); v2 = np.dot(v_vec, v_vec)
+    a = 1.0/(2.0/rnorm - v2/mu)
+    h = np.cross(r_vec, v_vec); hnorm = np.linalg.norm(h)
+    e_vec = (np.cross(v_vec, h)/mu) - (r_vec/rnorm)
+    e = np.linalg.norm(e_vec)
+    return a, e
+
+a0, e0 = _ae_from_rv(r, v, mu)
+T_orb = 2.0*np.pi*np.sqrt(a0**3/mu)           # período osculante (s)
+t = np.linspace(0.0, T_orb, 1_000_000)        # <<< substitui seu t para 1 órbita
