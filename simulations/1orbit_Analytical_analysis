@@ -214,4 +214,13 @@ plt.title('Mudança de inclinação: Simulação × Analítico (apogeu)')
 plt.legend(); plt.grid(True, alpha=0.3)
 plt.show()
 
+
+print("\n=== Analítico × Simulado (1 órbita) ===")
+print(f"Período orbital (s):        {T_orb:.3f}")
+print(f"Tempo com H ligado (s):     {t_H_on:.6f}")
+print(f"Δv_H acumulado (m/s):       {delta_v_H_ms:.6f}")
+print(f"v_apogeu (km/s):            {v_apo:.9f}")
+print(f"Δi_ideal (graus):           {delta_i_ideal_deg:.9f}")
+print(f"Δi_sim (último - inicial):  {delta_i_sim_deg[-1]:.9f}")
+
 plot_classic_orbital_elements(t, orbital_elementss)
