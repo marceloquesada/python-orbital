@@ -28,7 +28,7 @@ t = np.linspace(0.0, T_orb, 1_000_000)        # <<< substitui seu t para 1 órbi
 
 # ===================== ADIÇÕES (H e janelas em anomalia verdadeira) =====================
 # Acelerações efetivas (defina direto em km/s^2 se quiser "massa desprezível")
-m_sat = 12.0
+m_sat = 20.0
 aV = (thrust/m_sat)/1000.0   # km/s^2, empuxo tangencial V (deixe ligado p/ espiral)  ← pode comentar se quiser V=off
 aH = (thrust/m_sat/1000.0)                  # km/s^2, empuxo em H (normal ao plano) durante a janela
 
@@ -122,16 +122,18 @@ for i in range(X.shape[1]):
     orbital_elementss.append(get_orbital_elements(x[0:3], x[3:6], mu))
 
 plt.figure()
-ax = plt.axes(projection='3d')
-u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
-x = earth_radius * np.cos(u)*np.sin(v)
-y = earth_radius * np.sin(u)*np.sin(v)
-z = earth_radius * np.cos(v)
-ax.plot_wireframe(x, y, z, color="r")
+ax = plt.axes(projection='3d')   # <<< Faltou essa linha
+uu, vv = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+x_sph = earth_radius * np.cos(uu)*np.sin(vv)
+y_sph = earth_radius * np.sin(uu)*np.sin(vv)
+z_sph = earth_radius * np.cos(vv)
+ax.plot_wireframe(x_sph, y_sph, z_sph, color="r")
 ax.plot3D(X[0, :], X[1, :], X[2, :], 'b-')
 ax.set_title('Orbit Propagation')
+
 ax.axis('equal')
 plt.show()
+
 
 nus_deg = []
 incs_deg = []
@@ -213,6 +215,7 @@ plt.ylabel('Δi [graus]')
 plt.title('Mudança de inclinação: Simulação × Analítico (apogeu)')
 plt.legend(); plt.grid(True, alpha=0.3)
 plt.show()
+
 
 
 print("\n=== Analítico × Simulado (1 órbita) ===")
