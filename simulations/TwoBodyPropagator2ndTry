@@ -17,7 +17,7 @@ mu = 3.986e5
 T   = 1.1e-3       # N  (1.1 mN)
 Isp = 2150.0       # s
 g0  = 9.80665      # m/s^2
-m0  = 12.0         # kg
+m0  = 20         # kg
 m_dry = 10.0       # kg (cortar empuxo ao atingir massa seca)
 
 def throttle(t, x):
