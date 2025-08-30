@@ -1,39 +1,27 @@
 import numpy as np
 from scipy.integrate import solve_ivp
 import matplotlib.pyplot as plt
+from utils.GetClassicOrbitalElements import *
+from utils.visualization import plot_classic_orbital_elements
 
-# (opcional) utilitários do seu projeto
-try:
-    from utils.GetClassicOrbitalElements import get_orbital_elements
-    from utils.visualization import plot_classic_orbital_elements
-    HAVE_UTILS = True
-except Exception:
-    HAVE_UTILS = False
 
-# =====================================
-# CONFIGURAÇÃO
-# =====================================
-# Estado inicial
 r0 = np.array([10016.34, -17012.52, 7899.28])   # km
 v0 = np.array([2.5, -1.05, 3.88])               # km/s
 
 # Tempo de simulação (aumente para ver efeitos com mais clareza)
 t_eval = np.linspace(0, 200_000, 120_000)       # s
 
-# Constantes
 earth_radius = 6378.0       # km
 mu = 3.986e5                # km^3/s^2
 
-# Thruster e massa (ATUALIZADO: 20 kg)
 thrust_N = 1.1e-3           # N (1.1 mN)
 m_sat    = 20.0             # kg  <<< ALTERADO AQUI
 
-# Acelerações físicas (km/s^2)
 aV_phys  = (thrust_N/m_sat)/1000.0  # empuxo tangencial V (espiral)
 K_H      = 1.0                      # fração do empuxo usada no canal H (0..1)
 aH_phys  = K_H * aV_phys            # empuxo normal H (durante a janela)
 
-# Janelas de anomalia verdadeira (graus)
+
 THRUST_INTERVAL_DEG = 20.0          # largura total (ex.: 170–190 => 20°)
 MEAN_THETA_LIST_DEG = [180.0]       # centros (ex.: 180° = apogeu). pode listar vários
 
