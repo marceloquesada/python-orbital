@@ -1,6 +1,17 @@
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+from utils.GetClassicOrbitalElements import *
+from utils.visualization import plot_classic_orbital_elements
 
 
+r = np.array([10016.34, -17012.52, 7899.28])
+v = np.array([2.5, -1.05, 3.88])
+earth_radius = 6378.0  # in km
+mu = 3.986e5
+thrust = 1.1e-3
 
+#considerando agora t como orbita e nao tempo
 
 def _ae_from_rv(r_vec, v_vec, mu):
     rnorm = np.linalg.norm(r_vec); v2 = np.dot(v_vec, v_vec)
