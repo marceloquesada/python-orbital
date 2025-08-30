@@ -1,0 +1,221 @@
+import numpy as np
+from scipy.integrate import solve_ivp
+import matplotlib.pyplot as plt
+
+# (opcional) utilitários do seu projeto
+try:
+    from utils.GetClassicOrbitalElements import get_orbital_elements
+    from utils.visualization import plot_classic_orbital_elements
+    HAVE_UTILS = True
+except Exception:
+    HAVE_UTILS = False
+
+# =====================================
+# CONFIGURAÇÃO
+# =====================================
+# Estado inicial
+r0 = np.array([10016.34, -17012.52, 7899.28])   # km
+v0 = np.array([2.5, -1.05, 3.88])               # km/s
+
+# Tempo de simulação (aumente para ver efeitos com mais clareza)
+t_eval = np.linspace(0, 200_000, 120_000)       # s
+
+# Constantes
+earth_radius = 6378.0       # km
+mu = 3.986e5                # km^3/s^2
+
+# Thruster e massa (ATUALIZADO: 20 kg)
+thrust_N = 1.1e-3           # N (1.1 mN)
+m_sat    = 20.0             # kg  <<< ALTERADO AQUI
+
+# Acelerações físicas (km/s^2)
+aV_phys  = (thrust_N/m_sat)/1000.0  # empuxo tangencial V (espiral)
+K_H      = 1.0                      # fração do empuxo usada no canal H (0..1)
+aH_phys  = K_H * aV_phys            # empuxo normal H (durante a janela)
+
+# Janelas de anomalia verdadeira (graus)
+THRUST_INTERVAL_DEG = 20.0          # largura total (ex.: 170–190 => 20°)
+MEAN_THETA_LIST_DEG = [180.0]       # centros (ex.: 180° = apogeu). pode listar vários
+
+# Rodar ambos os cenários
+RUN_V_ON  = True
+RUN_V_OFF = True
+
+# =====================================
+# Funções auxiliares
+# =====================================
+def wrap_deg(a):  # [0,360)
+    return (a % 360.0 + 360.0) % 360.0
+
+def angle_in_window_deg(theta_deg, center_deg, width_deg):
+    half = 0.5*width_deg
+    lo = wrap_deg(center_deg - half)
+    hi = wrap_deg(center_deg + half)
+    th = wrap_deg(theta_deg)
+    if lo <= hi:
+        return (th >= lo) and (th <= hi)
+    else:
+        return (th >= lo) or (th <= hi)
+
+def true_anomaly_and_inclination_deg(r_vec, v_vec, mu):
+    r = r_vec; v = v_vec
+    rnorm = np.linalg.norm(r)
+    h_vec  = np.cross(r, v);  h = np.linalg.norm(h_vec)
+
+    # inclinação
+    cos_i = np.clip(h_vec[2]/max(h,1e-12), -1.0, 1.0)
+    inc = np.degrees(np.arccos(cos_i))
+
+    # vetor excentricidade
+    e_vec = (np.cross(v, h_vec)/mu) - (r/max(rnorm,1e-12))
+    e = np.linalg.norm(e_vec)
+
+    if e < 1e-12:
+        # órbita ~circular: define ν pela direção tangencial
+        cos_nu, sin_nu = 1.0, 0.0
+    else:
+        cos_nu = np.clip(np.dot(e_vec, r)/(e*max(rnorm,1e-12)), -1.0, 1.0)
+        sin_nu = np.dot(h_vec, np.cross(r, e_vec)) / (max(h,1e-12)*e*max(rnorm,1e-12))
+
+    nu = np.degrees(np.arctan2(sin_nu, cos_nu))
+    return wrap_deg(nu), inc
+
+# Dinâmica com opção V on/off e H por janela de ν
+def rhs_factory(V_on=True):
+    def rhs(t, x):
+        r = x[0:3]; v = x[3:6]
+        rnorm = np.linalg.norm(r)
+        xdot = np.zeros_like(x)
+        # Cinemática
+        xdot[0:3] = v
+        # Gravidade
+        xdot[3:6] = -(mu/(rnorm**3))*r
+
+        # Empuxo tangencial V (espiral)
+        if V_on:
+            vnorm = np.linalg.norm(v)
+            if vnorm > 0:
+                v_hat = v / vnorm
+                xdot[3:6] += aV_phys * v_hat
+
+        # Empuxo normal H quando ν está na(s) janela(s)
+        h_vec = np.cross(r, v); h = np.linalg.norm(h_vec)
+        if h > 0:
+            nu_deg, _ = true_anomaly_and_inclination_deg(r, v, mu)
+            fire_H = any(angle_in_window_deg(nu_deg, cdeg, THRUST_INTERVAL_DEG)
+                         for cdeg in MEAN_THETA_LIST_DEG)
+            if fire_H:
+                h_hat = h_vec / h
+                xdot[3:6] += aH_phys * h_hat
+        return xdot
+    return rhs
+
+# =====================================
+# Propagação
+# =====================================
+x0 = np.hstack((r0, v0))
+sol_on = sol_off = None
+X_on = X_off = None
+
+if RUN_V_ON:
+    sol_on = solve_ivp(rhs_factory(V_on=True), (t_eval[0], t_eval[-1]), x0,
+                       t_eval=t_eval, rtol=1e-9, atol=1e-12)
+    X_on = sol_on.y
+
+if RUN_V_OFF:
+    sol_off = solve_ivp(rhs_factory(V_on=False), (t_eval[0], t_eval[-1]), x0,
+                        t_eval=t_eval, rtol=1e-9, atol=1e-12)
+    X_off = sol_off.y
+
+# =====================================
+# Elementos clássicos (para os 4 painéis)
+# =====================================
+if RUN_V_ON and HAVE_UTILS:
+    orbital_elements_on = []
+    for k in range(X_on.shape[1]):
+        r_k = X_on[0:3, k]; v_k = X_on[3:6, k]
+        orbital_elements_on.append(get_orbital_elements(r_k, v_k, mu))
+
+if RUN_V_OFF and HAVE_UTILS:
+    orbital_elements_off = []
+    for k in range(X_off.shape[1]):
+        r_k = X_off[0:3, k]; v_k = X_off[3:6, k]
+        orbital_elements_off.append(get_orbital_elements(r_k, v_k, mu))
+
+# =====================================
+# PLOTS
+# =====================================
+
+# 3D — V ON
+if X_on is not None:
+    fig = plt.figure(figsize=(7,6))
+    ax = fig.add_subplot(111, projection='3d')
+    uu, vv = np.mgrid[0:2*np.pi:30j, 0:np.pi:15j]
+    xe = earth_radius * np.cos(uu)*np.sin(vv)
+    ye = earth_radius * np.sin(uu)*np.sin(vv)
+    ze = earth_radius * np.cos(vv)
+    ax.plot_wireframe(xe, ye, ze, color="r", alpha=0.3, linewidth=0.5)
+    ax.plot3D(X_on[0, :], X_on[1, :], X_on[2, :], 'b-', linewidth=1.0)
+    ax.set_title('Trajetória 3D — V LIGADO + H por janela(ν)')
+    ax.set_xlabel('x [km]'); ax.set_ylabel('y [km]'); ax.set_zlabel('z [km]')
+    ax.set_box_aspect([1,1,1])
+    plt.show()
+
+# 3D — V OFF
+if X_off is not None:
+    fig = plt.figure(figsize=(7,6))
+    ax = fig.add_subplot(111, projection='3d')
+    uu, vv = np.mgrid[0:2*np.pi:30j, 0:np.pi:15j]
+    xe = earth_radius * np.cos(uu)*np.sin(vv)
+    ye = earth_radius * np.sin(uu)*np.sin(vv)
+    ze = earth_radius * np.cos(vv)
+    ax.plot_wireframe(xe, ye, ze, color="r", alpha=0.3, linewidth=0.5)
+    ax.plot3D(X_off[0, :], X_off[1, :], X_off[2, :], 'g-', linewidth=1.0)
+    ax.set_title('Trajetória 3D — V DESLIGADO + H por janela(ν)')
+    ax.set_xlabel('x [km]'); ax.set_ylabel('y [km]'); ax.set_zlabel('z [km]')
+    ax.set_box_aspect([1,1,1])
+    plt.show()
+
+# Raio vs tempo — comparação
+if (X_on is not None) and (X_off is not None):
+    r_on  = np.linalg.norm(X_on[0:3, :], axis=0)
+    r_off = np.linalg.norm(X_off[0:3, :], axis=0)
+    plt.figure(figsize=(8,4))
+    plt.plot(sol_on.t/3600,  r_on,  label='V ON',  lw=1.0)
+    plt.plot(sol_off.t/3600, r_off, label='V OFF', lw=1.0)
+    plt.xlabel('Tempo [h]'); plt.ylabel('||r|| [km]')
+    plt.title('Raio orbital vs. tempo')
+    plt.legend(); plt.grid(True, alpha=0.3)
+    plt.show()
+
+# Inclinação vs anomalia verdadeira — comparação
+def i_vs_nu_from_state(X):
+    N = X.shape[1]
+    nus = np.empty(N); incs = np.empty(N)
+    for k in range(N):
+        nu_k, inc_k = true_anomaly_and_inclination_deg(X[0:3, k], X[3:6, k], mu)
+        nus[k] = nu_k; incs[k] = inc_k
+    return nus, incs
+
+if X_on is not None:
+    nu_on, i_on = i_vs_nu_from_state(X_on)
+if X_off is not None:
+    nu_off, i_off = i_vs_nu_from_state(X_off)
+
+plt.figure(figsize=(8,5))
+if X_on is not None:
+    plt.plot(nu_on,  i_on,  '.', ms=1.2, label='V ON')
+if X_off is not None:
+    plt.plot(nu_off, i_off, '.', ms=1.2, label='V OFF')
+plt.xlim(0, 360)
+plt.xlabel('Anomalia verdadeira, ν [deg]')
+plt.ylabel('Inclinação, i [deg]')
+plt.title('Inclinação vs Anomalia Verdadeira')
+plt.legend(); plt.grid(True, alpha=0.3)
+plt.show()
+
+# 4 painéis clássicos (seus utilitários)
+if RUN_V_ON and HAVE_UTILS:
+    plot_classic_orbital_elements(sol_on.t, orbital_elements_on)
+if RUN_V_OFF and HAVE_UTILS:
+    plot_classic_orbital_elements(sol_off.t, orbital_elements_off)
