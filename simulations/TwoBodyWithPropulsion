@@ -12,7 +12,6 @@ earth_radius = 6378.0  # in km
 mu = 3.986e5
 thrust = 1.1e-3
 
-<<<<<<< HEAD
 # ===================== ADIÇÕES (H e janela do apogeu) =====================
 # Aceleração efetiva do empuxo em H (normal ao plano). Se quiser "massa desprezível",
 # pode definir diretamente este valor em km/s^2. Ex.: aH = 1e-6 (0.001 m/s^2).
@@ -49,39 +48,12 @@ aV = 5e-6  # km/s^2  (ex.: 0.005 m/s^2 para visualizar; depois reduza)
 #m_sat = 12.0
 #aV = (thrust/m_sat)/1000.0  # km/s^2
 # ==========================================================================
-=======
-# ===================== ADIÇÃO (H no apogeu) =====================
-# massa (p/ converter thrust -> aceleração); se quiser, troque pelo seu valor real
-m_sat = 12.0  # kg
-aH = (thrust / m_sat) / 1000.0  # [km/s^2]  (m/s^2 -> km/s^2)
-
-def _osculating_ae_ra_rp(r_vec, v_vec, mu):
-    rnorm = np.linalg.norm(r_vec)
-    v2    = np.dot(v_vec, v_vec)
-    a = 1.0/(2.0/rnorm - v2/mu)
-    h = np.cross(v_vec, np.cross(r_vec, v_vec))  # usa formula e = |(v×h)/mu - r/r|
-    evec = (np.cross(v_vec, np.cross(r_vec, v_vec))/mu) - (r_vec/rnorm)
-    e = np.linalg.norm(evec)
-    ra = a*(1.0 + e)
-    rp = a*(1.0 - e)
-    return a, e, ra, rp
-
-def _near_apogee(r_vec, v_vec, mu, tol_rel=5e-3, tol_vr=1e-5):
-    rnorm = np.linalg.norm(r_vec)
-    a, e, ra, rp = _osculating_ae_ra_rp(r_vec, v_vec, mu)
-    vr = np.dot(r_vec, v_vec)/max(rnorm, 1e-12)  # componente radial da velocidade
-    close_ra = abs(rnorm - ra) <= tol_rel*max(ra, 1.0)
-    near_turn = abs(vr) <= tol_vr
-    return close_ra and near_turn
-# ================================================================
->>>>>>> 2c5a3d73bb359f39d41966f952e51145e27c0b37
 
 def x_dot(t, x):
     xdot = np.zeros_like(x)
     xdot[0] = x[3]
     xdot[1] = x[4]
     xdot[2] = x[5]
-<<<<<<< HEAD
 
     # Gravidade
     r_vec = x[0:3]
@@ -101,20 +73,6 @@ def x_dot(t, x):
     if h_norm > 0.0 and _near_apogee(r_vec, v_vec, mu):
         h_dir = h_vec / h_norm
         xdot[3:6] += aH * h_dir
-=======
-    h= np.cross(x[0:3], x[3:6])
-    h_hat=np.linalg.norm(h)
-    xdot[3:6] = -(mu/(np.linalg.norm(x[0:3]))**3)*x[0:3] + (thrust*np.linalg.norm(xdot[0:3]))
-
-    # ===================== ADIÇÃO (empuxo H no apogeu) =====================
-    r_vec = x[0:3]; v_vec = x[3:6]
-    h_vec = np.cross(r_vec, v_vec)
-    h_norm = np.linalg.norm(h_vec)
-    if h_norm > 0.0 and _near_apogee(r_vec, v_vec, mu):
-        h_dir = h_vec / h_norm                # direção normal ao plano orbital (H)
-        xdot[3:6] += aH * h_dir               # aplica aceleração em H (no apogeu)
-    # ======================================================================
->>>>>>> 2c5a3d73bb359f39d41966f952e51145e27c0b37
 
     return xdot
 
@@ -140,13 +98,4 @@ ax.set_title('Orbit Propagation')
 ax.axis('equal')
 plt.show()
 
-<<<<<<< HEAD
 plot_classic_orbital_elements(t, orbital_elementss)
-=======
-plot_classic_orbital_elements(t, orbital_elementss)
-
-
-
-
-
->>>>>>> 2c5a3d73bb359f39d41966f952e51145e27c0b37
