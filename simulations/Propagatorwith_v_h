@@ -16,7 +16,7 @@ thrust = 1.1e-3
 # Acelerações efetivas (defina direto em km/s^2 se quiser "massa desprezível")
 m_sat = 12.0
 aV = (thrust/m_sat)/1000.0   # km/s^2, empuxo tangencial V (deixe ligado p/ espiral)  ← pode comentar se quiser V=off
-aH = 1.0e-6                  # km/s^2, empuxo em H (normal ao plano) durante a janela
+aH = (thrust/m_sat/1000.0)                  # km/s^2, empuxo em H (normal ao plano) durante a janela
 
 # Parâmetros das janelas de anomalia verdadeira (em graus):
 THRUST_INTERVAL_DEG = 10.0                       # largura total (ex.: 10°)
@@ -118,5 +118,32 @@ ax.plot3D(X[0, :], X[1, :], X[2, :], 'b-')
 ax.set_title('Orbit Propagation')
 ax.axis('equal')
 plt.show()
+
+nus_deg = []
+incs_deg = []
+for k in range(X.shape[1]):
+    r_vec = X[0:3, k]
+    v_vec = X[3:6, k]
+
+    # anomalia verdadeira (graus) usando a função que você já tem
+    nu_k = true_anomaly_deg(r_vec, v_vec, mu)
+    nus_deg.append(nu_k)
+
+    # inclinação a partir do momento angular h = r x v
+    h_vec = np.cross(r_vec, v_vec)
+    h_norm = np.linalg.norm(h_vec) + 1e-12
+    cos_i = np.clip(h_vec[2] / h_norm, -1.0, 1.0)
+    i_k = np.degrees(np.arccos(cos_i))
+    incs_deg.append(i_k)
+
+plt.figure()
+plt.plot(nus_deg, incs_deg, '.', ms=1.0)
+plt.xlim(0, 360)
+plt.xlabel('Anomalia Verdadeira, ν (graus)')
+plt.ylabel('Inclinação, i (graus)')
+plt.title('Inclinação vs Anomalia Verdadeira')
+plt.grid(True, alpha=0.3)
+plt.show()
+
 
 plot_classic_orbital_elements(t, orbital_elementss)
