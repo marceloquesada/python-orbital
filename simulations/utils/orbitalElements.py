@@ -1,26 +1,19 @@
 import numpy as np
-from dataclasses import dataclass
+from utils.types import OrbitalElements
 from .constants import Bases
 
 
-@dataclass
-class OrbitalElements:
-    major_axis: float
-    eccentricity: float
-    inclination: float
-    ascending_node: float  #  Right ascension of the ascending node
-    argument_of_perigee: float
-    true_anomaly: float
+def get_orbital_elements(X: np.typing.NDArray, mu: float) -> OrbitalElements:
+    r = X[0:3]
+    v = X[3:6]
 
-
-def get_orbital_elements(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> OrbitalElements:
     orbital_elements = OrbitalElements(
-        major_axis = get_major_axis(r, v, mu),
-        eccentricity = get_eccentricity(r, v, mu),
-        inclination = get_inclination(r, v, mu),
-        ascending_node = get_ascending_node(r, v, mu),
-        argument_of_perigee = get_argument_of_perigee(r, v, mu),
-        true_anomaly = get_true_anormaly(r, v, mu)
+        major_axis=get_major_axis(r, v, mu),
+        eccentricity=get_eccentricity(r, v, mu),
+        inclination=get_inclination(r, v, mu),
+        ascending_node=get_ascending_node(r, v, mu),
+        argument_of_perigee=get_argument_of_perigee(r, v, mu),
+        true_anomaly=get_true_anormaly(r, v, mu)
     )
 
     return orbital_elements
@@ -84,3 +77,10 @@ def get_eccentricity_vector(r: np.typing.NDArray, v: np.typing.NDArray, mu: floa
     e = (np.cross(v, h)/mu) - (r/np.linalg.norm(r))
 
     return e
+
+
+def get_period(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
+    a = get_major_axis(r, v, mu)
+    period = 2*np.pi*np.sqrt((a**3)/mu)
+
+    return period

@@ -1,6 +1,9 @@
 import matplotlib.pyplot as plt
+from utils.types import OrbitalElements
+import numpy as np
 
-def plot_classic_orbital_elements(t, orbital_elementss):
+
+def plot_classic_orbital_elements(t: np.typing.NDArray, orbital_elementss: list[OrbitalElements]):
     """
     Plots the classic orbital elements over time.
 
@@ -46,4 +49,25 @@ def plot_classic_orbital_elements(t, orbital_elementss):
     axs[2, 1].grid(True)
     axs[2, 1].legend()
     plt.tight_layout()
+    plt.show()
+
+
+def plot_3D_view(
+        X,
+        plot_earth: bool = True,
+        earth_radius: float = 6378.0,
+        earth_color: str = 'r'
+        ):
+    plt.figure()
+    if plot_earth:
+        ax = plt.axes(projection='3d')
+        u, v = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
+        x = earth_radius * np.cos(u)*np.sin(v)
+        y = earth_radius * np.sin(u)*np.sin(v)
+        z = earth_radius * np.cos(v)
+        ax.plot_wireframe(x, y, z, color="r")
+
+    ax.plot3D(X[0, :], X[1, :], X[2, :], 'b-')
+    ax.set_title('Orbit Propagation')
+    ax.axis('equal')
     plt.show()
