@@ -13,7 +13,7 @@ thrust = 1.1e-3
 
 # ===================== período osculante (1 órbita) usando utilitários =====================
 a0 = get_major_axis(r, v, mu)
-e0 = get_excentricity(r, v, mu)
+e0 = get_eccentricity(r, v, mu)
 T_orb = 2.0*np.pi*np.sqrt(a0**3/mu)           # período osculante (s)
 t = np.linspace(0.0, T_orb, 1_000_000)        # integra 1 órbita
 
@@ -74,7 +74,7 @@ def x_dot(ti, x):
     h_vec = np.cross(r_vec, v_vec)
     h_norm = np.linalg.norm(h_vec)
     if h_norm > 1e-12:  # tolerância numérica
-        theta_deg = get_true_anomaly(r_vec, v_vec, mu)  # usa função do módulo
+        theta_deg = get_true_anormaly(r_vec, v_vec, mu)  # usa função do módulo
         if in_any_window(theta_deg):
             h_dir = h_vec / h_norm
             xdot[3:6] += aH * h_dir
@@ -94,8 +94,8 @@ for k in range(X.shape[1]):
     r_vec = X[0:3, k]
     v_vec = X[3:6, k]
     orbital_elementss.append(get_orbital_elements(r_vec, v_vec, mu))
-    nus_deg.append(get_true_anomaly(r_vec, v_vec, mu))   # θ (graus)
-    incs_deg.append(get_inclination(r_vec, v_vec))       # i (graus)
+    nus_deg.append(get_true_anormaly(r_vec, v_vec, mu))   # θ (graus)
+    incs_deg.append(get_inclination(r_vec, v_vec, mu))     # i (graus)
 nus_deg = np.array(nus_deg)
 incs_deg = np.array(incs_deg)
 
