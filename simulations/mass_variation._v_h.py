@@ -85,7 +85,7 @@ def x_dot(t, x):
     # Empuxo H: liga se θ estiver em qualquer janela configurada
     fire_H = False
     if h_norm > 1e-12:
-        theta_deg = get_true_anomaly(r_vec, v_vec, mu)  # usa utilitário do módulo
+        theta_deg = get_true_anormaly(r_vec, v_vec, mu)  # usa utilitário do módulo
         fire_H = in_any_window(theta_deg)
         if u > 0.0 and fire_H:               # só aplica se houver propelente
             h_dir = h_vec / h_norm
@@ -105,6 +105,7 @@ sol = solve_ivp(x_dot, (t[0], t[-1]), x0, t_eval=t, method='RK45')
 
 X = sol.y
 
+# ---------- elementos, ν (0–360) e i ----------
 orbital_elementss = []
 nus_deg = []
 incs_deg = []
@@ -112,11 +113,62 @@ for k in range(X.shape[1]):
     r_vec = X[0:3, k]
     v_vec = X[3:6, k]
     orbital_elementss.append(get_orbital_elements(r_vec, v_vec, mu))
-    # anomalia verdadeira (graus) usando utilitário
-    nus_deg.append(get_true_anomaly(r_vec, v_vec, mu))
-    # inclinação via utilitário
-    incs_deg.append(get_inclination(r_vec, v_vec))
+    # anomalia verdadeira (módulo retorna [0,180]); mapeia para (180,360) quando r·v < 0
+    nu = get_true_anormaly(r_vec, v_vec, mu)
+    if np.dot(r_vec, v_vec) < 0.0:
+        nu = (360.0 - nu) % 360.0
+    nus_deg.append(nu)
+    # inclinação
+    incs_deg.append(get_inclination(r_vec, v_vec, mu))
 
+nus_deg = np.array(nus_deg)
+incs_deg = np.array(incs_deg)
+
+# ---------- Δv_H e v_apogeu numéricos (várias órbitas) ----------
+tt = sol.t
+r_norm_series = np.linalg.norm(X[0:3, :].T, axis=1)
+v_norm_series = np.linalg.norm(X[3:6, :].T, axis=1)
+m_series       = X[6, :]
+
+# janela H (em ν) ao longo de toda a simulação
+fire_mask = np.array([in_any_window(nu) for nu in nus_deg], dtype=bool)
+# só há thrust se ainda houver propelente
+u_mask = (m_series > m_dry)
+
+# integrais por soma de Riemann
+dt = np.diff(tt)
+
+# aceleração instantânea (km/s^2) pela força fixa T e massa variável m(t)
+a_inst_series = (T / np.maximum(m_series, 1e-18)) / 1000.0  # [km/s^2]
+
+# Δv_H acumulado (apenas quando H está ligado E há propelente)
+delta_v_H_kms = float(np.sum(a_inst_series[:-1] * dt * (fire_mask[:-1] & u_mask[:-1])))
+delta_v_H_ms  = 1000.0 * delta_v_H_kms  # [m/s]
+
+# "tempo com H ligado" (opcional, só p/ log)
+t_H_on = float(np.sum(dt * fire_mask[:-1]))
+
+# v_apogeu numérico: média da velocidade quando H está ativo
+if np.any(fire_mask):
+    v_apo = float(np.mean(v_norm_series[fire_mask]))
+else:
+    v_apo = float(np.max(v_norm_series))  # fallback
+
+# Δi_ideal usando v_apo numérico
+arg = np.clip(delta_v_H_kms/(2.0*v_apo), -1.0, 1.0)
+delta_i_ideal_deg = float(np.degrees(2.0*np.arcsin(arg)))
+
+# Δi simulado (referenciado ao início)
+delta_i_sim_deg = incs_deg - incs_deg[0]
+
+print("\n=== Analítico × Simulado (várias órbitas) ===")
+print(f"Tempo com H ligado (s):     {t_H_on:.6f}")
+print(f"Δv_H acumulado (m/s):       {delta_v_H_ms:.6f}")
+print(f"v_apogeu (km/s):            {v_apo:.9f}")
+print(f"Δi_ideal (graus):           {delta_i_ideal_deg:.9f}")
+print(f"Δi_sim (último - inicial):  {delta_i_sim_deg[-1]:.9f}")
+
+# ---------- gráficos ----------
 plt.figure()
 ax = plt.axes(projection='3d')
 u, vgrid = np.mgrid[0:2*np.pi:20j, 0:np.pi:10j]
