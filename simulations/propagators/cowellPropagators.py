@@ -76,7 +76,6 @@ class TwoBodyPropagator:
 
     def to_orbital_elements(self) -> list[OrbitalElements]:
         orbital_elementss = []
-        print(self.state_vectors.shape)
         for i in range(self.state_vectors.shape[1]):
             orbital_elementss.append(get_orbital_elements(self.state_vectors[:, i], self.mu))
         self.orbital_elementss = orbital_elementss
@@ -169,7 +168,6 @@ class DisturbedPropagator:
 
     def to_orbital_elements(self) -> list[OrbitalElements]:
         orbital_elementss = []
-        print(self.state_vectors.shape)
         for i in range(self.state_vectors.shape[1]):
             orbital_elementss.append(get_orbital_elements(self.state_vectors[:, i], self.mu))
         self.orbital_elementss = orbital_elementss
