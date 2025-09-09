@@ -13,7 +13,7 @@ def get_orbital_elements(X: np.typing.NDArray, mu: float) -> OrbitalElements:
         inclination=get_inclination(r, v, mu),
         ascending_node=get_ascending_node(r, v, mu),
         argument_of_perigee=get_argument_of_perigee(r, v, mu),
-        true_anomaly=get_true_anormaly(r, v, mu)
+        true_anomaly=get_true_anomaly(r, v, mu)
     )
 
     return orbital_elements
@@ -77,23 +77,15 @@ def get_argument_of_perigee(r: np.typing.NDArray, v: np.typing.NDArray, mu: floa
     return omega
 
 
-# Longitude do nó ascendente
-    
-    # Argumento do perigeu
-    if np.linalg.norm(n) > 1e-10:
-        omega = np.arccos(np.dot(n, e_vec)/(np.linalg.norm(n)*e))
-        if e_vec[2] < 0:
-            omega = 2*np.pi - omega
-    else:
-        omega = 0
-
-def get_true_anormaly(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
+def get_true_anomaly(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     e = get_eccentricity_vector(r, v, mu)
 
-    v_rad = np.acos(np.dot(e, r)/ (np.linalg.norm(e)*np.linalg.norm(r)))
-    v = np.rad2deg(v_rad)
+    dot_er = np.dot(e, r)
+    cross_er = np.cross(e, r)
+    theta_rad = np.atan2(np.linalg.norm(cross_er), dot_er)
+    theta = np.rad2deg(theta_rad)
 
-    return v
+    return theta
 
 
 def get_eccentricity_vector(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> np.typing.NDArray:
@@ -108,3 +100,35 @@ def get_period(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     period = 2*np.pi*np.sqrt((a**3)/mu)
 
     return period
+
+
+# KEPLERIAN ELEMENTS
+def get_eccentric_anomaly(theta, e) -> float:
+    E_sin = np.sqrt(1-e**2)*np.sin(theta)
+    E_cos = 1 + e*np.cos(theta)
+
+    E = np.atan2(E_sin, E_cos)
+
+    return E
+
+
+def get_mean_angular_motion(period, mu: float) -> float:
+    n = 2*np.pi/period
+
+    return n
+
+
+def get_mean_anomaly(theta, e, mu: float) -> float:
+    E = get_eccentric_anomaly(theta, e)
+    M = E - e*np.sin(E)
+
+    return M
+
+
+def get_analitical_time(theta: float, e: float, period: float, t0: float, mu: float) -> float:
+    M = get_mean_anomaly(theta, e, mu)
+    n = get_mean_angular_motion(period, mu)
+
+    t = t0 + ((M)/n)
+
+    return t

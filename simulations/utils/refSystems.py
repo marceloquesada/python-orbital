@@ -3,6 +3,16 @@ from dataclasses import dataclass
 from utils.orbitalElements import OrbitalElements
 
 
+def get_base_versors(state_vector):
+    r_hat = np.linalg.norm(state_vector[0:3])
+    v_hat = np.linalg.norm(state_vector[3:6])
+    h_hat = np.linalg.norm(np.cross(state_vector[0:3], state_vector[3:6]))
+
+    base = np.array([r_hat, v_hat, h_hat])
+
+    return base
+
+
 # FUNDAMENTAL ROTATIONS
 def rot_X(angle_deg: float, direction: str = "clockwise") -> np.typing.NDArray:
     angle_rad = np.deg2rad(angle_deg)
@@ -72,7 +82,7 @@ def perifocal_to_inertial(points_perifocal: np.typing.NDArray, orbital_elements:
 
     rotation_matrix = Rz_Omega @ Rx_i @ Rz_omega
 
-    points_inertial = rotation_matrix @ points_perifocal
+    points_inertial = rotation_matrix @ points_perifocal  # @ é equivalente ao produto matricial
 
     return points_inertial
 

@@ -145,8 +145,10 @@ def plot_3D_overlay(
         z = earth_radius * np.cos(v)
         ax.plot_wireframe(x, y, z, color=earth_color, alpha=earth_alpha)
 
-    for X in Xs:
-        ax.plot3D(X[0, :], X[1, :], X[2, :], orbit_marker)
+    markers = ['-', '--', ':', '-.']
+    for i in range(len(Xs)):
+        X = Xs[i]
+        ax.plot3D(X[0, :], X[1, :], X[2, :], markers[i], linewidth=3)
     ax.set_title('Orbit Propagation')
     ax.axis('equal')
     plt.show()
