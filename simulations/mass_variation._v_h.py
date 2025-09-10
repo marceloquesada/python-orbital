@@ -7,7 +7,7 @@ from utils.visualization import plot_classic_orbital_elements
 
 r = np.array([10016.34, -17012.52, 7899.28])
 v = np.array([2.5, -1.05, 3.88])
-t = np.linspace(0, 432000, 1000000)
+t = np.linspace(0, 86400, 1000000)
 earth_radius = 6378.0  # in km
 mu = 3.986e5
 thrust = 1.1e-3  # N (BIT-3 ~1.1 mN)
@@ -26,7 +26,7 @@ m_dry = 15.0       # kg (massa seca)  << já existia e mantida
 
 # ===================== ADIÇÕES (H e janelas em anomalia verdadeira) =====================
 # OBS: aV/aH fixos foram abandonados; usamos a_inst = (T/m)/1000 dentro de x_dot
-THRUST_INTERVAL_DEG = 10.0
+THRUST_INTERVAL_DEG = 30.0
 MEAN_THETA_LIST_DEG = [180.0]
 
 def throttle(t, x):
@@ -67,34 +67,39 @@ def x_dot(t, x):
     rnorm = np.linalg.norm(r_vec)
     xdot[3:6] = -(mu/(rnorm**3))*r_vec
 
-    # Normas e direção
+    # Normas e direção (mantidos)
     vnorm = np.linalg.norm(v_vec)
     h_vec = np.cross(r_vec, v_vec)
     h_norm = np.linalg.norm(h_vec)
 
-    # ---------- PATCH: aceleração e empuxo só com propelente disponível ----------
+    # ---------- PATCH (SUBSTITUIÇÃO): empuxo em RSW ----------
+    # motor ligado enquanto houver propelente; módulo da aceleração T/m (km/s^2)
     m_cur = max(x[6], 1e-18)                 # kg (evita div/0)
     u = throttle(t, x)                       # 1.0 se m > m_dry, senão 0.0
-    a_inst = (T / m_cur) / 1000.0            # km/s^2 (força fixa T, massa variável)
+    a_inst = (T / m_cur) / 1000.0            # km/s^2 (estado em km e km/s)
 
-    # (opcional) Empuxo tangencial V -> no seu original, sempre ligado
-    if u > 0.0 and vnorm > 1e-12:            # só aplica se houver propelente
-        v_hat = v_vec / vnorm
-        xdot[3:6] += a_inst * v_hat
+    # base RSW: R (radial), S (along-track), W (normal ao plano)
+    r_hat = r_vec / (np.linalg.norm(r_vec) + 1e-32)
+    h_vec_local = np.cross(r_vec, v_vec)
+    w_hat = h_vec_local / (np.linalg.norm(h_vec_local) + 1e-32)   # normal ao plano orbital
+    s_hat = np.cross(w_hat, r_hat)                                # tangencial (along-track)
+    s_hat /= (np.linalg.norm(s_hat) + 1e-32)
 
-    # Empuxo H: liga se θ estiver em qualquer janela configurada
-    fire_H = False
-    if h_norm > 1e-12:
-        theta_deg = get_true_anormaly(r_vec, v_vec, mu)  # usa utilitário do módulo
-        fire_H = in_any_window(theta_deg)
-        if u > 0.0 and fire_H:               # só aplica se houver propelente
-            h_dir = h_vec / h_norm
-            xdot[3:6] += a_inst * h_dir
+    # janela em ν (anomalia verdadeira)
+    theta_deg = get_true_anormaly(r_vec, v_vec, mu)
+    fire_H = in_any_window(theta_deg)
 
-    # Consumo de propelente (só quando há propelente **e** algum modo ativo)
-    thr_on = 1.0 if (u > 0.0 and ((vnorm > 0.0) or fire_H)) else 0.0
-    xdot[6] = - thr_on * (T/(Isp*g0))
-    # ---------------------------------------------------------------------------
+    # V sempre ligado; dentro da janela, rotaciona parte para W
+    alpha = np.deg2rad(45.0) if fire_H else 0.0   # deflexão desejada (ajustável)
+    dir_hat = np.cos(alpha)*s_hat + np.sin(alpha)*w_hat  # |dir_hat|=1
+
+    if u > 0.0:
+        xdot[3:6] += a_inst * dir_hat
+        # consumo de propelente constante enquanto motor ligado
+        xdot[6] = - T/(Isp*g0)
+    else:
+        xdot[6] = 0.0
+    # ---------------------------------------------------------
 
     return xdot
 
