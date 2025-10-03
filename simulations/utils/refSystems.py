@@ -1,6 +1,6 @@
 import numpy as np
 from dataclasses import dataclass
-from utils.orbitalElements import OrbitalElements
+from orbital_elements.oeOpsArray import OrbitalElements
 
 
 def get_base_versors(state_vector):
@@ -74,8 +74,6 @@ def perifocal_to_inertial(points_perifocal: np.typing.NDArray, orbital_elements:
     Omega = orbital_elements.ascending_node
     i = orbital_elements.inclination
 
-    print(omega, Omega, i)
-
     Rz_omega = rot_Z(omega, direction="counter-clockwise")
     Rx_i = rot_X(i, direction="counter-clockwise")
     Rz_Omega = rot_Z(Omega, direction="counter-clockwise")
@@ -101,3 +99,19 @@ def inertial_to_perifocal(points_inertial: np.typing.NDArray, orbital_elements: 
     points_perifocal = rotation_matrix @ points_inertial
 
     return points_perifocal
+
+def orbital_to_inertial(points_orbital: np.typing.NDArray, orbital_elements: OrbitalElements):
+    omega = orbital_elements.argument_of_perigee
+    Omega = orbital_elements.ascending_node
+    i = orbital_elements.inclination
+    theta = orbital_elements.true_anomaly
+
+    Rz_omega = rot_Z(omega+theta, direction="counter-clockwise")
+    Rx_i = rot_X(i, direction="counter-clockwise")
+    Rz_Omega = rot_Z(Omega, direction="counter-clockwise")
+
+    rotation_matrix = Rz_Omega @ Rx_i @ Rz_omega
+
+    points_inertial = rotation_matrix @ points_orbital  # @ é equivalente ao produto matricial
+
+    return points_inertial

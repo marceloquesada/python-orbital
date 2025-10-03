@@ -1,8 +1,12 @@
 import numpy as np
 from utils.types import OrbitalElements
-from .constants import Bases
+from utils.constants import Bases
 
 
+MIN_ALLOWED_VALUE = 1e-10
+
+
+## SINGLE VALUE FUNCTIONS
 def get_orbital_elements(X: np.typing.NDArray, mu: float) -> OrbitalElements:
     r = X[0:3]
     v = X[3:6]
@@ -75,7 +79,7 @@ def get_eccentricity(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> f
     e = get_eccentricity_vector(r, v, mu)
     e_norm = np.linalg.norm(e)
 
-    if e_norm < 1e-5:
+    if abs(e_norm) < MIN_ALLOWED_VALUE:
         e_norm = 0
 
     return e_norm
@@ -91,7 +95,7 @@ def get_inclination(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> fl
 
     i = np.rad2deg(i_rad)
 
-    if i < 1e-4:
+    if i < MIN_ALLOWED_VALUE:
         i = 0
 
     return i
@@ -134,16 +138,16 @@ def get_argument_of_perigee(r: np.typing.NDArray, v: np.typing.NDArray, mu: floa
 def get_true_anomaly(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     e = get_eccentricity_vector(r, v, mu)
 
-    if e != 0:
-        dot_er = np.dot(e, r)
-        cross_er = np.cross(e, r)
-        theta_rad = np.atan2(np.linalg.norm(cross_er), dot_er)
-        theta = np.rad2deg(theta_rad)
-    else:  # Handle circular orbits
-        h = np.cross(r, v)
-        n = np.cross(Bases.k, h)
+    dot_er = np.dot(e, r)
+    cross_er = np.cross(e, r)
+    theta_rad = np.atan2(np.linalg.norm(cross_er), dot_er)
 
-        if np.linalg.norm(n) > 1e-10
+    if np.dot(r, v) < 0:
+        theta_rad = 2*np.pi - theta_rad
+    if np.linalg.norm(e) < MIN_ALLOWED_VALUE:  # Handle circular orbits
+        theta_rad = 0
+
+    theta = np.rad2deg(theta_rad)
 
     return theta
 
@@ -151,6 +155,9 @@ def get_true_anomaly(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> f
 def get_eccentricity_vector(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> np.typing.NDArray:
     h = np.cross(r, v)  # angular mommentum
     e = (np.cross(v, h)/mu) - (r/np.linalg.norm(r))
+
+    if np.linalg.norm(e) < MIN_ALLOWED_VALUE:  # Handle circular orbits
+        e = np.zeros_like(e)
 
     return e
 
@@ -236,4 +243,28 @@ def get_analitical_time(theta: float, e: float, period: float, t0: float, mu: fl
 
     return t
 
+
+def get_true_anomaly_from_mean(e: float | np.typing.NDArray, M: float | np.typing.NDArray, max_iterations: int = 30, tolerance: float = 1e-8) -> float | np.typing.NDArray:
+    theta_rad = None
+
+    if M < np.pi:
+        E_i = M + (e/2)
+    else:
+        E_i = M - (e/2)
+
+    for i in range(max_iterations):
+        f = M - E_i + e*np.sin(E_i)
+        df = -1 + e*np.cos(E_i)
+        E_i1 = E_i - (f/df)
+        if abs(E_i1 - E_i) <= tolerance:
+            theta_rad = 2*np.atan(np.sqrt((1+e)/(1-e)) * np.tan(E_i1/2))
+            break
+        E_i = E_i1
+
+    if theta_rad is None:
+        raise Exception("Given number of iterations is not enough for achieving given tolerance")
+    
+    theta = np.rad2deg(theta_rad)
+    
+    return theta
 

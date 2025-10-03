@@ -1,6 +1,6 @@
 import numpy as np
 from utils.types import OrbitalElements
-from utils import orbitalElementsOperations
+from orbital_elements import oeOpsArray
 from utils import refSystems
 from .constants import Bases
 

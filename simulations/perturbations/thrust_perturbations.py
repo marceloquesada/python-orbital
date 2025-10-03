@@ -1,4 +1,5 @@
-from utils import orbitalElements, refSystems
+from utils import orbitalElementsOperations
+from utils import refSystems
 import numpy as np
 import scipy
 
@@ -12,7 +13,7 @@ class FixedMassThetaIntervalThrust:
         self.angle_intervals = angle_intervals
 
     def get_acceleration(self, state_vector, dt):
-        theta = orbitalElements.get_true_anomaly(state_vector[0:3], state_vector[3:6], self.mu)
+        theta = orbitalElementsOperations.get_true_anomaly(state_vector[0:3], state_vector[3:6], self.mu)
         mass = self.m_sat
         angle_intervals = self.angle_intervals
 
@@ -44,7 +45,7 @@ class VariableMassThetaIntervalThrust:
             self.mdot = thrust/Isp
 
     def get_acceleration(self, state_vector, dt):
-        theta = orbitalElements.get_true_anomaly(state_vector[0:3], state_vector[3:6], self.mu)
+        theta = orbitalElementsOperations.get_true_anomaly(state_vector[0:3], state_vector[3:6], self.mu)
         mass = self.m_dry + self.m_prop
         angle_intervals = self.angle_intervals
 

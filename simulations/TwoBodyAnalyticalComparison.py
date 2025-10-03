@@ -23,6 +23,7 @@ print(oes_analit[0].true_anomaly, oes_analit[-1].true_anomaly)
 
 visualization.plot_3D_overlay(X_I_analit, X_I_num, orbit_marker='--')
 
+print(oes_analit[0].inclination, oes_num[0].inclination)
 visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num])
 
 fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True)

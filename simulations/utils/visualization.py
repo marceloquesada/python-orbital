@@ -1,5 +1,7 @@
-import matplotlib.pyplot as plt
 from utils.types import OrbitalElements
+from utils.constants import Bases
+
+import matplotlib.pyplot as plt
 import numpy as np
 from cycler import cycler
 
@@ -59,6 +61,7 @@ def plot_classic_orbital_elements_overlay(*orbital_elementss_lists: list[np.typi
     for orbital_elementss_list in orbital_elementss_lists:
         t = orbital_elementss_list[0]
         orbital_elementss = orbital_elementss_list[1]
+
         """
         Plots the classic orbital elements over time.
 
@@ -82,6 +85,7 @@ def plot_classic_orbital_elements_overlay(*orbital_elementss_lists: list[np.typi
         axs[1, 0].set_title('Inclination')
         axs[1, 0].set_xlabel('Time (s)')
         axs[1, 0].set_ylabel('Inclination (degrees)')
+        axs[1, 0].set_ylim(0, 180)
         axs[1, 0].grid(True)
         axs[1, 0].legend()
         axs[1, 1].plot(t, [element.ascending_node for element in orbital_elementss], label='Ascending Node')
@@ -123,6 +127,9 @@ def plot_3D_view(
         ax.plot_wireframe(x, y, z, color=earth_color, alpha=earth_alpha)
 
     ax.plot3D(X[0, :], X[1, :], X[2, :], 'b-')
+    ax.quiver(0, 0, 0, Bases.i[0], Bases.i[1], Bases.i[2], length = 1.5*earth_radius)
+    ax.quiver(0, 0, 0, Bases.j[0], Bases.j[1], Bases.j[2], length = 1.5*earth_radius)
+    ax.quiver(0, 0, 0, Bases.k[0], Bases.k[1], Bases.k[2], length = 1.5*earth_radius)
     ax.set_title('Orbit Propagation')
     ax.axis('equal')
     plt.show()
@@ -145,10 +152,14 @@ def plot_3D_overlay(
         z = earth_radius * np.cos(v)
         ax.plot_wireframe(x, y, z, color=earth_color, alpha=earth_alpha)
 
-    markers = ['-', '--', ':', '-.']
     for i in range(len(Xs)):
+
         X = Xs[i]
-        ax.plot3D(X[0, :], X[1, :], X[2, :], markers[i], linewidth=3)
+        ax.plot3D(X[0, :], X[1, :], X[2, :], linewidth=0.7)
+
+    ax.quiver(0, 0, 0, Bases.i[0], Bases.i[1], Bases.i[2], length = 1.5*earth_radius)
+    ax.quiver(0, 0, 0, Bases.j[0], Bases.j[1], Bases.j[2], length = 1.5*earth_radius)
+    ax.quiver(0, 0, 0, Bases.k[0], Bases.k[1], Bases.k[2], length = 1.5*earth_radius)
     ax.set_title('Orbit Propagation')
     ax.axis('equal')
     plt.show()
