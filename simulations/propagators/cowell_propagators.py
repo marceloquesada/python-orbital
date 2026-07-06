@@ -1,11 +1,11 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from orbital_elements.oeOps import (
+from simulations.propagators.orbital_elements.elements import (
     get_orbital_elements,
     get_period
 )
 from utils.types import OrbitalElements
-from utils.visualization import (
+from simulations.utils.visualization import (
     plot_classic_orbital_elements,
     plot_3D_view
 )

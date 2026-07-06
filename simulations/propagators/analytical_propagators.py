@@ -1,5 +1,5 @@
 import numpy as np
-from orbital_elements import oeOps
+from simulations.propagators.orbital_elements import elements
 from utils import refSystems
 from copy import copy
 
@@ -9,18 +9,18 @@ class TwoBodyAnalyticalPropagator:
         self.state_vector_0 = state_vector_0
         self.mu = mu
 
-        self.orbital_elements = oeOps.get_orbital_elements(state_vector_0, self.mu)
+        self.orbital_elements = elements.get_orbital_elements(state_vector_0, self.mu)
 
     def _get_timestamps(self):
         theta_0 = self.thetas_rad[0]
-        period = oeOps.get_period(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
+        period = elements.get_period(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
         e = self.orbital_elements.eccentricity
         mu = self.mu
-        t_0 = oeOps.get_analitical_time(theta_0, e, period, 0, mu)
+        t_0 = elements.get_analitical_time(theta_0, e, period, 0, mu)
 
         ts = np.array([])
         for theta in self.thetas_rad:
-            t = oeOps.get_analitical_time(theta, e, period, t_0, mu)
+            t = elements.get_analitical_time(theta, e, period, t_0, mu)
             ts = np.concatenate((ts, np.array([t])))
 
         return ts
@@ -72,7 +72,7 @@ class TwoBodyAnalyticalPropagator:
         return times
 
     def propagate_2d(self, periods: int = 1, step_size: float = 0.01):
-        theta_0 = oeOps.get_true_anomaly(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
+        theta_0 = elements.get_true_anomaly(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
         thetas = np.arange(theta_0, (periods*360) + theta_0, step_size)
 
         thetas_rad = np.deg2rad(thetas)

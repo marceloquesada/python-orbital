@@ -1,8 +1,8 @@
 from orbital_elements import oeOpsArray
-from utils import stateVectorsOperations
-from utils import visualization
+from simulations.orbital_elements import stateVectorOps
+from utils import visualizations
 from utils import types
-from utils import TLE
+from TLE import TLEOps
 from propagators import analyticalPropagators, cowellPropagators
 import numpy as np
 import matplotlib.pyplot as plt
@@ -16,7 +16,7 @@ tle = ["25544U 98067A   25275.46710094  .00015763  00000+0  28741-3 0  9998",
        "25544  51.6327 135.3521 0001043 189.2069 170.8900 15.49620641531809"
        ]
 
-state_vector_0 = TLE.TLE_to_state_vectors(tle, mu)
+state_vector_0 = TLEOps.TLE_to_state_vectors(tle, mu)
 
 propagator_analit = analyticalPropagators.TwoBodyAnalyticalPropagator(state_vector_0, mu)
 t_analit, X_I_analit = propagator_analit.propagate(step_size=0.1)
@@ -27,9 +27,9 @@ propagator_num = cowellPropagators.TwoBodyPropagator(state_vector_0, mu)
 t_num, X_I_num = propagator_num.propagate(t, periods=1, integration_method='Radau')
 oes_num = propagator_num.to_orbital_elements()
 
-visualization.plot_3D_overlay(X_I_analit, X_I_num, orbit_marker='--')
+visualizations.plot_3D_overlay(X_I_analit, X_I_num, orbit_marker='--')
 
-visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num])
+visualizations.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num])
 
 fig, axs = plt.subplots(3, 1, figsize=(8, 10), sharex=True)
 labels = ['x', 'y', 'z']

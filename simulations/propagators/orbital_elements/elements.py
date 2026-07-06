@@ -6,8 +6,7 @@ from utils.constants import Bases
 MIN_ALLOWED_VALUE = 1e-10
 
 
-## SINGLE VALUE FUNCTIONS
-def get_orbital_elements(X: np.typing.NDArray, mu: float) -> OrbitalElements:
+def get_osculating_elements(X: np.typing.NDArray, mu: float):
     r = X[0:3]
     v = X[3:6]
 
@@ -18,53 +17,17 @@ def get_orbital_elements(X: np.typing.NDArray, mu: float) -> OrbitalElements:
         raise Exception("Orbit is parabolic, only elliptical orbits are supported")
     elif e > 1:
         raise Exception("Orbit is hyperbolic, only elliptical orbits are supported")
-    
-    if e == 0:
-        orbit_type = "circular"
-    else:
-        orbit_type = "elliptical"
+   
+    oe = np.array([
+         get_major_axis(r, v, mu),
+         get_eccentricity(r, v, mu),
+         get_inclination(r, v, mu),
+         get_ascending_node(r, v, mu),
+         get_argument_of_perigee(r, v, mu),
+         get_true_anomaly(r, v, mu)
+        ])
 
-    if i == 0:
-        orbit_type += ", equatorial"
-
-    if "elliptical" in orbit_type:
-        if "equatorial" in orbit_type:
-            orbital_elements = OrbitalElements(
-                major_axis=get_major_axis(r, v, mu),
-                eccentricity=get_eccentricity(r, v, mu),
-                inclination=get_inclination(r, v, mu),
-                longitude_of_periapsis=get_longitude_of_periapsis(r, v, mu),
-                true_anomaly=get_true_anomaly(r, v, mu)
-            )
-        else:
-            orbital_elements = OrbitalElements(
-                major_axis=get_major_axis(r, v, mu),
-                eccentricity=get_eccentricity(r, v, mu),
-                inclination=get_inclination(r, v, mu),
-                ascending_node=get_ascending_node(r, v, mu),
-                argument_of_perigee=get_argument_of_perigee(r, v, mu),
-                true_anomaly=get_true_anomaly(r, v, mu)
-            )
-    elif orbit_type == "circular":
-        if "equatorial" in orbit_type:
-            orbital_elements = OrbitalElements(
-                major_axis=get_major_axis(r, v, mu),
-                inclination=get_inclination(r, v, mu),
-                ascending_node=get_ascending_node(r, v, mu),
-                argument_of_latitude=get_argument_of_latitude(r, v, mu)
-            )
-        else:
-            orbital_elements = OrbitalElements(
-                major_axis=get_major_axis(r, v, mu),
-                longitude_of_periapsis=get_longitude_of_periapsis(r, v, mu),
-                argument_of_latitude=get_argument_of_latitude(r, v, mu)
-            )
-    
-    orbital_elements.orbit_type = orbit_type
-    
-
-    return orbital_elements
-
+    return oe
 
 def get_major_axis(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     r_norm = np.linalg.norm(r)

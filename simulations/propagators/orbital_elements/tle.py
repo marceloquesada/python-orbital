@@ -1,8 +1,8 @@
 import numpy as np
 import re
 
-from utils import stateVectorsOperations
-from orbital_elements import oeOps
+from simulations.propagators.orbital_elements import state_vectors
+from simulations.propagators.orbital_elements import elements
 from utils.types import OrbitalElements
 
 
@@ -23,7 +23,7 @@ def TLE_to_orbital_elements(TLE: list[str], mu) -> OrbitalElements:
     a = np.cbrt(mu/(n**2))
 
     # Getting true anomaly from mean anomaly
-    theta = oeOps.get_true_anomaly_from_mean(e, M)
+    theta = elements.get_true_anomaly_from_mean(e, M)
 
     orbitalElements.major_axis = a
     orbitalElements.inclination = i
@@ -38,6 +38,6 @@ def TLE_to_orbital_elements(TLE: list[str], mu) -> OrbitalElements:
 def TLE_to_state_vectors(TLE: list[str], mu) -> np.typing.NDArray:
     orbital_elements = TLE_to_orbital_elements(TLE, mu)
 
-    state_vectors = stateVectorsOperations.get_state_vectors(orbital_elements, mu)
+    state_vectors = state_vectors.get_state_vectors(orbital_elements, mu)
 
     return state_vectors
