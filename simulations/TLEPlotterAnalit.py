@@ -39,7 +39,7 @@ names, state_vectors = get_process_TLE(mu, "goes")
 Xss = []
 
 for state_vector in state_vectors:
-    propagator_analit = analyticalPropagators.TwoBodyAnalyticalPropagator(state_vector, mu)
+    propagator_analit = analyticalPropagators.Two_body_analytical_propagator(state_vector, mu)
     t_analit, X_I_analit = propagator_analit.propagate(step_size=0.1)
 
     Xss.append(X_I_analit)

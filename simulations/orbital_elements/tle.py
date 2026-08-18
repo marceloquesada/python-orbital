@@ -1,14 +1,11 @@
 import numpy as np
 import re
 
-from simulations.propagators.orbital_elements import state_vectors
-from simulations.propagators.orbital_elements import elements
-from utils.types import OrbitalElements
+from simulations.orbital_elements import state_vectors
+from simulations.orbital_elements import elements
 
 
-def TLE_to_orbital_elements(TLE: list[str], mu) -> OrbitalElements:
-    orbitalElements = OrbitalElements()
-
+def TLE_to_orbital_elements(TLE: list[str], mu) -> np.typing.NDArray:
     elements_tle = re.split(" +", TLE[1])
 
     i = float(elements_tle[2])
@@ -25,14 +22,9 @@ def TLE_to_orbital_elements(TLE: list[str], mu) -> OrbitalElements:
     # Getting true anomaly from mean anomaly
     theta = elements.get_true_anomaly_from_mean(e, M)
 
-    orbitalElements.major_axis = a
-    orbitalElements.inclination = i
-    orbitalElements.ascending_node = Omega
-    orbitalElements.argument_of_perigee = omega
-    orbitalElements.eccentricity = e
-    orbitalElements.true_anomaly = theta
+    oe = np.array([a, i, Omega, omega, e, theta])
 
-    return orbitalElements
+    return  oe
 
 
 def TLE_to_state_vectors(TLE: list[str], mu) -> np.typing.NDArray:

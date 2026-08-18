@@ -3,7 +3,7 @@ from simulations.orbital_elements import stateVectorOps
 from utils import visualizations
 from utils import types
 from TLE import TLEOps
-from propagators import analyticalPropagators, cowellPropagators
+from propagators import analyticalPropagators, Cowell_propagators
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -18,12 +18,12 @@ tle = ["25544U 98067A   25275.46710094  .00015763  00000+0  28741-3 0  9998",
 
 state_vector_0 = TLEOps.TLE_to_state_vectors(tle, mu)
 
-propagator_analit = analyticalPropagators.TwoBodyAnalyticalPropagator(state_vector_0, mu)
+propagator_analit = analyticalPropagators.Two_body_analytical_propagator(state_vector_0, mu)
 t_analit, X_I_analit = propagator_analit.propagate(step_size=0.1)
 oes_analit = propagator_analit.to_orbital_elements()
 
 print("Running numerical propagator")
-propagator_num = cowellPropagators.TwoBodyPropagator(state_vector_0, mu)
+propagator_num = Cowell_propagators.TwoBodyPropagator(state_vector_0, mu)
 t_num, X_I_num = propagator_num.propagate(t, periods=1, integration_method='Radau')
 oes_num = propagator_num.to_orbital_elements()
 

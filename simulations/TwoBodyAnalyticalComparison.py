@@ -1,5 +1,5 @@
 from utils import visualization
-from propagators import analyticalPropagators, cowellPropagators
+from propagators import analyticalPropagators, Cowell_propagators
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -12,11 +12,11 @@ mu = 3.986e5
 
 state_vector_0 = np.concatenate((r, v))
 
-propagator_analit = analyticalPropagators.TwoBodyAnalyticalPropagator(state_vector_0, mu)
+propagator_analit = analyticalPropagators.Two_body_analytical_propagator(state_vector_0, mu)
 t_analit, X_I_analit = propagator_analit.propagate(step_size=0.1)
 oes_analit = propagator_analit.to_orbital_elements()
 
-propagator_num = cowellPropagators.TwoBodyPropagator(state_vector_0, mu)
+propagator_num = Cowell_propagators.TwoBodyPropagator(state_vector_0, mu)
 t_num, X_I_num = propagator_num.propagate(t, periods=1)
 oes_num = propagator_num.to_orbital_elements()
 print(oes_analit[0].true_anomaly, oes_analit[-1].true_anomaly)

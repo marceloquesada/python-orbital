@@ -1,7 +1,7 @@
 from utils import visualization
 from simulations.orbital_elements import oeOpsArray
 from simulations.utils import stateVectorsOperations
-from propagators import analyticalPropagators, cowellPropagators
+from propagators import analyticalPropagators, Cowell_propagators
 from perturbations import thrust_perturbations
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,13 +21,13 @@ m_sat = 20
 
 state_vector_0 = np.concatenate((r, v))
 
-orbital_elements_0 = oeOpsArray.get_orbital_elements(state_vector_0, mu)
+orbital_elements_0 = oeOpsArray.get_osculating_elements(state_vector_0, mu)
 orbital_elements_0.inclination = 60
 state_vector_1 = stateVectorsOperations.get_state_vectors(orbital_elements_0, mu)
 
 
 # Propagador analítico de 2 corpos
-propagator_analit = analyticalPropagators.TwoBodyAnalyticalPropagator(state_vector_1, mu)
+propagator_analit = analyticalPropagators.Two_body_analytical_propagator(state_vector_1, mu)
 t_analit, X_I_analit = propagator_analit.propagate(step_size=0.1)
 oes_analit = propagator_analit.to_orbital_elements()
 
@@ -36,7 +36,7 @@ angle_intervs = [(179, 181)]
 thrust_perturb = thrust_perturbations.FixedMassThetaIntervalThrust(thrust, thrust_direction, m_sat, mu, angle_intervs)
 perturbs = [thrust_perturb]
 
-propagator_num = cowellPropagators.PerturbedPropagator(state_vector_1, mu, perturbs)
+propagator_num = Cowell_propagators.PerturbedPropagator(state_vector_1, mu, perturbs)
 t_num, X_I_num = propagator_num.propagate(t, periods=1)
 oes_num = propagator_num.to_orbital_elements()
 print(oes_analit[0].true_anomaly, oes_analit[-1].true_anomaly)

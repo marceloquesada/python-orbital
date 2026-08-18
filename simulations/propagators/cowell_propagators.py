@@ -1,10 +1,9 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from simulations.propagators.orbital_elements.elements import (
-    get_orbital_elements,
+from simulations.orbital_elements.elements import (
+    get_osculating_elements,
     get_period
 )
-from utils.types import OrbitalElements
 from simulations.utils.visualization import (
     plot_classic_orbital_elements,
     plot_3D_view
@@ -12,7 +11,7 @@ from simulations.utils.visualization import (
 from tqdm import tqdm
 
 
-class TwoBodyPropagator:
+class Cowell_propagator:
     """
     Propagates the motion of a body under the influence of a central gravitational field using the two-body problem formulation.
 
@@ -100,7 +99,7 @@ class TwoBodyPropagator:
     def to_orbital_elements(self) -> list[OrbitalElements]:
         orbital_elementss = []
         for i in range(self.state_vectors.shape[1]):
-            orbital_elementss.append(get_orbital_elements(self.state_vectors[:, i], self.mu))
+            orbital_elementss.append(get_osculating_elements(self.state_vectors[:, i], self.mu))
         self.orbital_elementss = orbital_elementss
 
         return orbital_elementss
@@ -150,7 +149,7 @@ class PerturbedPropagator:
     def to_orbital_elements(self) -> list[OrbitalElements]:
         orbital_elementss = []
         for i in range(self.state_vectors.shape[1]):
-            orbital_elementss.append(get_orbital_elements(self.state_vectors[:, i], self.mu))
+            orbital_elementss.append(get_osculating_elements(self.state_vectors[:, i], self.mu))
         self.orbital_elementss = orbital_elementss
 
         return orbital_elementss

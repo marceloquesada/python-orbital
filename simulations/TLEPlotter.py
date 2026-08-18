@@ -3,7 +3,7 @@ from utils import stateVectorsOperations
 from utils import visualization
 from utils import types
 from utils import TLE
-from propagators import analyticalPropagators, cowellPropagators
+from propagators import analyticalPropagators, Cowell_propagators
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
@@ -34,7 +34,7 @@ def process_tle():
         print(f"Processing {tle_lines[3*i].split("        ")[0]}")
         state_vector_0 = TLE.TLE_to_state_vectors(tle_lines[3*i+1:3*i+3], mu)
 
-        propagator_analit = analyticalPropagators.TwoBodyAnalyticalPropagator(state_vector_0, mu)
+        propagator_analit = analyticalPropagators.Two_body_analytical_propagator(state_vector_0, mu)
         t_analit, X_I_analit = propagator_analit.propagate(step_size=0.1)
 
         Xs.append(X_I_analit)
@@ -51,7 +51,7 @@ process_tle()
 
 # state_vector_0 = TLE.TLE_to_state_vectors(tle, mu)
 
-# propagator_analit = analyticalPropagators.TwoBodyAnalyticalPropagator(state_vector_0, mu)
+# propagator_analit = analyticalPropagators.Two_body_analytical_propagator(state_vector_0, mu)
 # t_analit, X_I_analit = propagator_analit.propagate(step_size=0.1)
 # oes_analit = propagator_analit.to_orbital_elements()
 

@@ -4,7 +4,7 @@ from utils import visualizations
 from utils import types
 from visualization import plots3D
 from TLE import TLEOps
-from propagators import analyticalPropagators, cowellPropagators
+from propagators import analyticalPropagators, Cowell_propagators
 import numpy as np
 import matplotlib.pyplot as plt
 import requests
@@ -42,7 +42,7 @@ state_vectorss = process_tle()
 Xs = []
 
 for state_vector in state_vectorss:
-    propagator_num = cowellPropagators.TwoBodyPropagator(state_vector, mu)
+    propagator_num = Cowell_propagators.TwoBodyPropagator(state_vector, mu)
     t_analit, X_I_analit = propagator_num.propagate(np.linspace(0, 2000000, 10000),periods=1)
 
     Xs.append(X_I_analit)

@@ -1,20 +1,20 @@
 import numpy as np
-from simulations.propagators.orbital_elements import elements
-from utils import refSystems
+from ..orbital_elements import elements
+from ..orbital_utils import ref_systems
 from copy import copy
 
 
-class TwoBodyAnalyticalPropagator:
+class Two_body_analytical_propagator:
     def __init__(self, state_vector_0, mu: float):
         self.state_vector_0 = state_vector_0
         self.mu = mu
 
-        self.orbital_elements = elements.get_orbital_elements(state_vector_0, self.mu)
+        self.orbital_elements = elements.get_osculating_elements(state_vector_0, self.mu)
 
     def _get_timestamps(self):
         theta_0 = self.thetas_rad[0]
         period = elements.get_period(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
-        e = self.orbital_elements.eccentricity
+        e = self.orbital_elements[1]
         mu = self.mu
         t_0 = elements.get_analitical_time(theta_0, e, period, 0, mu)
 
@@ -84,7 +84,7 @@ class TwoBodyAnalyticalPropagator:
         v = self.state_vector_0[3:6]
 
         h = np.cross(r, v)
-        e = self.orbital_elements.eccentricity
+        e = self.orbital_elements[1]
         p = np.linalg.norm(h)**2/self.mu
 
         rs = p / (1 + e * np.cos(thetas_rad))
@@ -97,7 +97,7 @@ class TwoBodyAnalyticalPropagator:
 
     def propagate(self, periods: int = 1, step_size: float = 0.01):
         ts, X_p = self.propagate_2d(periods, step_size)
-        X_I = refSystems.perifocal_to_inertial(X_p, self.orbital_elements)
+        X_I = ref_systems.perifocal_to_inertial(X_p, self.orbital_elements)
 
         return ts, X_I
 

@@ -1,6 +1,4 @@
 import numpy as np
-from utils.types import OrbitalElements
-from utils.constants import Bases
 
 
 MIN_ALLOWED_VALUE = 1e-10
@@ -37,7 +35,6 @@ def get_major_axis(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> flo
 
     return a
 
-
 def get_eccentricity(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     e = get_eccentricity_vector(r, v, mu)
     e_norm = np.linalg.norm(e)
@@ -63,13 +60,12 @@ def get_inclination(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> fl
 
     return i
 
-
 def get_ascending_node(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     h = np.cross(r, v)
-    n = np.cross(Bases.k, h)
+    n = np.cross(np.array([1, 0, 0]), h)
 
     if np.linalg.norm(n) > 1e-10:
-        Omega_rad = np.acos(np.dot(Bases.i, n)/np.linalg.norm(n))
+        Omega_rad = np.acos(np.dot(np.array([1, 0, 0]), n)/np.linalg.norm(n))
         if n[1] < 0:
             Omega_rad = 2*np.pi - Omega_rad
     else:
@@ -84,7 +80,7 @@ def get_argument_of_perigee(r: np.typing.NDArray, v: np.typing.NDArray, mu: floa
     e_vec = get_eccentricity_vector(r, v, mu)
     e = np.linalg.norm(e_vec)
     h = np.cross(r, v)
-    n = np.cross(Bases.k, h)
+    n = np.cross( np.array([0, 0, 1]), h)
 
     if np.linalg.norm(n) > 1e-10 and e != 0:
         omega_rad = np.acos(np.dot(n, e_vec)/(np.linalg.norm(n)*e))
@@ -135,7 +131,7 @@ def get_period(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
 # ALTERNATIVE ELEMENTS
 def get_argument_of_latitude(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     h = np.cross(r, v)
-    n = np.cross(Bases.k, h)
+    n = np.cross(np.array([0, 0, 1]), h)
 
     dot_rn = np.dot(r, n)
     cross_rn = np.cross(r, n)
@@ -151,10 +147,10 @@ def get_longitude_of_periapsis(r: np.typing.NDArray, v: np.typing.NDArray, mu: f
     e_vec = get_eccentricity_vector(r, v, mu)
     e = np.linalg.norm(e_vec)
     h = np.cross(r, v)
-    n = np.cross(Bases.k, h)
+    n = np.cross(np.array([0, 0, 1]), h)
 
     if np.linalg.norm(n) > 1e-10 and e != 0:
-        varpi_rad = np.acos(np.dot(Bases.i, e_vec)/(np.linalg.norm(Bases.i)*e))
+        varpi_rad = np.acos(np.dot(np.array([1, 0, 0]), e_vec)/(np.linalg.norm(np.array([1, 0, 0]))*e))
         if e_vec[1] < 0:
             varpi_rad = 2*np.pi - varpi_rad
     else:
@@ -165,8 +161,8 @@ def get_longitude_of_periapsis(r: np.typing.NDArray, v: np.typing.NDArray, mu: f
     return varpi
 
 def get_true_longitude(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
-    dot_ri = np.dot(r, Bases.i)
-    cross_ri = np.cross(r, Bases.i)
+    dot_ri = np.dot(r, np.array([1, 0, 0]))
+    cross_ri = np.cross(r, np.array([1, 0, 0]))
 
     l_rad = np.atan2(np.linalg.norm(cross_ri), dot_ri)
 

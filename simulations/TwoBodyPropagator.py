@@ -1,4 +1,4 @@
-from propagators.cowellPropagators import TwoBodyPropagator
+from propagators.Cowell_propagators import TwoBodyPropagator
 from utils.visualization import plot_3D_view, plot_classic_orbital_elements
 import numpy as np
 
