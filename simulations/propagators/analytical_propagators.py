@@ -10,11 +10,12 @@ class Two_body_analytical_propagator:
         self.mu = mu
 
         self.orbital_elements = elements.get_osculating_elements(state_vector_0, self.mu)
+        print(self.orbital_elements.shape)
 
     def _get_timestamps(self):
         theta_0 = self.thetas_rad[0]
-        period = elements.get_period(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
-        e = self.orbital_elements[1]
+        period = elements.get_period(self.state_vector_0[:, 0:3], self.state_vector_0[:, 3:6], self.mu)
+        e = self.orbital_elements[:, 1]
         mu = self.mu
         t_0 = elements.get_analitical_time(theta_0, e, period, 0, mu)
 
@@ -84,7 +85,7 @@ class Two_body_analytical_propagator:
         v = self.state_vector_0[3:6]
 
         h = np.cross(r, v)
-        e = self.orbital_elements[1]
+        e = self.orbital_elements[:, 1]
         p = np.linalg.norm(h)**2/self.mu
 
         rs = p / (1 + e * np.cos(thetas_rad))
@@ -102,14 +103,15 @@ class Two_body_analytical_propagator:
         return ts, X_I
 
     def to_orbital_elements(self):
-        orbital_elementss = []
+        orbital_elementss = np.array()
+        orbital_elementss = orbital_elementss[:, np.newaxis]
 
         wrapped_thetas = self.thetas % 360
 
         for theta in wrapped_thetas:
             orbital_elements = copy(self.orbital_elements)
-            orbital_elements.true_anomaly = theta
-            orbital_elementss.append(orbital_elements)
+            orbital_elements[:, 1] = theta
+            orbital_elementss = np.concatenate(orbital_elementss, orbital_elements)
 
         self.orbital_elementss = orbital_elementss
 

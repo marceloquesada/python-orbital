@@ -15,7 +15,7 @@ mu = 3.986e5
 
 thrust = 100  # In Km/s
                 #  r, v, h
-thrust_direction = np.array([0, 1, 0])
+thrust_direction = Bases.j
 Isp = 220
 m_sat = 20
 

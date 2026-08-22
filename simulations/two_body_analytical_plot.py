@@ -10,6 +10,9 @@ earth_radius = 6378.0  # in km
 mu = 3.986e5
 
 state_vector_0 = np.concatenate((r, v))
+state_vector_0 = col_vec = state_vector_0[:, np.newaxis]
+
+print(state_vector_0.shape)
 propagator = analytical_propagators.Two_body_analytical_propagator(state_vector_0, mu)
 X_I = propagator.propagate(step_size=1)
 
