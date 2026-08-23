@@ -24,13 +24,12 @@ def TLE_to_orbital_elements(TLE: list[str], mu) -> np.typing.NDArray:
 
     oe = np.array([a, e, i, Omega, omega, theta])
 
-    print(oe)
-
     return  oe
 
 
 def TLE_to_state_vectors(TLE: list[str], mu) -> np.typing.NDArray:
     orbital_elements = TLE_to_orbital_elements(TLE, mu)
+    print(orbital_elements)
 
     state_vector = state_vectors.get_state_vectors(orbital_elements, mu)
 

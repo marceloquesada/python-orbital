@@ -67,9 +67,9 @@ def get_inclination(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> fl
 
 def get_ascending_node(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     h = np.cross(r, v)
-    n = np.cross(Bases.i, h)
+    n = np.cross(Bases.k, h)
 
-    if np.linalg.norm(n) > 1e-10:
+    if np.linalg.norm(n) > MIN_ALLOWED_VALUE:
         Omega_rad = np.acos(np.dot(Bases.i, n)/np.linalg.norm(n))
         if n[1] < 0:
             Omega_rad = 2*np.pi - Omega_rad
@@ -208,7 +208,7 @@ def get_analitical_time(theta: float, e: float, period: float, t0: float, mu: fl
     return t
 
 
-def get_true_anomaly_from_mean(e: float | np.typing.NDArray, M: float | np.typing.NDArray, max_iterations: int = 30, tolerance: float = 1e-8) -> float | np.typing.NDArray:
+def get_true_anomaly_from_mean(e: float, M: float, max_iterations: int = 300, tolerance: float = 1e-8) -> float:
     theta_rad = None
 
     if M < np.pi:

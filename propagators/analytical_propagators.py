@@ -72,7 +72,10 @@ class Two_body_analytical_propagator:
         return times
 
     def propagate_2d(self, periods: int = 1, step_size: float = 0.01):
-        theta_0 = get_true_anomaly(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
+        r = self.state_vector_0[0:3]
+        v = self.state_vector_0[3:6]
+
+        theta_0 = get_true_anomaly(r, v, self.mu)
         thetas = np.arange(theta_0, (periods*360) + theta_0, step_size)
 
         thetas_rad = np.deg2rad(thetas)
@@ -80,10 +83,7 @@ class Two_body_analytical_propagator:
         self.thetas = thetas
         self.thetas_rad = thetas_rad
 
-        r = self.state_vector_0[0:3]
-        v = self.state_vector_0[3:6]
-
-        h = np.cross(r, v, axis=0)
+        h = np.cross(r, v)
         e = self.orbital_elements[1]
         p = np.linalg.norm(h)**2/self.mu
 
@@ -92,6 +92,7 @@ class Two_body_analytical_propagator:
         X_p = np.array([rs * np.cos(thetas_rad), rs * np.sin(thetas_rad), np.zeros_like(thetas_rad)])
 
         ts = self.time_at_true_anomaly(r, v, self.mu, thetas_rad, t0=0)
+        ts[0] = 0
 
         return ts, X_p
 
@@ -103,7 +104,6 @@ class Two_body_analytical_propagator:
 
     def to_orbital_elements(self):
         orbital_elementss = np.zeros((6, len(self.thetas)))
-        print(orbital_elementss.shape)
 
         wrapped_thetas = self.thetas % 360
 

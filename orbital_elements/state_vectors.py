@@ -5,7 +5,7 @@ from orbital_utils import ref_systems
 def get_state_vectors(oe: np.typing.NDArray, mu: float) -> np.typing.NDArray:
     a = oe[0]
     e = oe[1]
-    theta = oe[2]
+    theta = oe[5]
 
     theta_rad = np.deg2rad(theta)
 

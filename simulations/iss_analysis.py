@@ -1,4 +1,4 @@
-from orbital_elements import *
+from orbital_elements import elements
 from utils import visualization
 from orbital_elements import tle
 from propagators import analytical_propagators, cowell_propagators
@@ -25,9 +25,5 @@ propagator_num = cowell_propagators.Unperturbed_propagator(state_vector_0, mu)
 t_num, X_I_num = propagator_num.propagate(t, periods=1, integration_method='Radau')
 oes_num = propagator_num.to_orbital_elements()
 
-print(oes_analit[1, 100], oes_num[1, 100])
-print(oes_analit[2, 100], oes_num[2, 100])
-
 visualization.plot_3D_overlay(X_I_analit, X_I_num, orbit_marker='--')
-
 visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num])
