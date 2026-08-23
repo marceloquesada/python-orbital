@@ -15,6 +15,4 @@ print(state_vector_0.shape)
 propagator = analytical_propagators.Two_body_analytical_propagator(state_vector_0, mu)
 t, X_I = propagator.propagate(step_size=1)
 
-print(X_I[1].shape)
-
 visualization.plot_3D_view(t, X_I)

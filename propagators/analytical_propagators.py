@@ -102,15 +102,16 @@ class Two_body_analytical_propagator:
         return ts, X_I
 
     def to_orbital_elements(self):
-        orbital_elementss = np.array()
-        orbital_elementss = orbital_elementss[:, np.newaxis]
+        orbital_elementss = np.zeros((6, len(self.thetas)))
+        print(orbital_elementss.shape)
 
         wrapped_thetas = self.thetas % 360
 
-        for theta in wrapped_thetas:
+        for i in range(len(wrapped_thetas)):
+            theta = wrapped_thetas[i]
             orbital_elements = copy(self.orbital_elements)
-            orbital_elements[:, 1] = theta
-            orbital_elementss = np.concatenate(orbital_elementss, orbital_elements)
+            orbital_elements[5] = theta
+            orbital_elementss[:, i] = orbital_elements
 
         self.orbital_elementss = orbital_elementss
 

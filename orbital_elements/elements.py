@@ -20,8 +20,6 @@ def get_osculating_elements(X: np.typing.NDArray, mu: float):
     Omega = get_ascending_node(r, v, mu)
     omega = get_argument_of_perigee(r, v, mu)
     theta = get_true_anomaly(r, v, mu)
-
-    print(a, e, i, Omega, omega, theta)
    
     oe = np.array([
          a,

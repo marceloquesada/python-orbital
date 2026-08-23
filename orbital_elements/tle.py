@@ -6,7 +6,7 @@ from orbital_elements import elements
 
 
 def TLE_to_orbital_elements(TLE: list[str], mu) -> np.typing.NDArray:
-    elements_tle = re.split(" +", TLE[1])
+    elements_tle = re. split(" +", TLE[1])
 
     i = float(elements_tle[2])
     Omega = float(elements_tle[3])
@@ -22,7 +22,9 @@ def TLE_to_orbital_elements(TLE: list[str], mu) -> np.typing.NDArray:
     # Getting true anomaly from mean anomaly
     theta = elements.get_true_anomaly_from_mean(e, M)
 
-    oe = np.array([a, i, Omega, omega, e, theta])
+    oe = np.array([a, e, i, Omega, omega, theta])
+
+    print(oe)
 
     return  oe
 
@@ -30,6 +32,6 @@ def TLE_to_orbital_elements(TLE: list[str], mu) -> np.typing.NDArray:
 def TLE_to_state_vectors(TLE: list[str], mu) -> np.typing.NDArray:
     orbital_elements = TLE_to_orbital_elements(TLE, mu)
 
-    state_vectors = state_vectors.get_state_vectors(orbital_elements, mu)
+    state_vector = state_vectors.get_state_vectors(orbital_elements, mu)
 
-    return state_vectors
+    return state_vector

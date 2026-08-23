@@ -1,11 +1,11 @@
 import numpy as np
-from ..orbital_utils import ref_systems
+from orbital_utils import ref_systems
 
 
 def get_state_vectors(oe: np.typing.NDArray, mu: float) -> np.typing.NDArray:
-    a = oe[:, 0]
-    e = oe[:, 1]
-    theta = oe[:, 2]
+    a = oe[0]
+    e = oe[1]
+    theta = oe[2]
 
     theta_rad = np.deg2rad(theta)
 
@@ -18,6 +18,6 @@ def get_state_vectors(oe: np.typing.NDArray, mu: float) -> np.typing.NDArray:
     r_I = ref_systems.perifocal_to_inertial(r_p, oe)
     v_I = ref_systems.perifocal_to_inertial(v_p, oe)
 
-    X_I = np.transpose(np.concatenate((r_I, v_I)))
+    X_I = np.concatenate((r_I, v_I))
 
     return X_I

@@ -54,12 +54,14 @@ def plot_classic_orbital_elements(t: np.typing.NDArray, orbital_elementss: np.ty
     plt.show()
 
 
-def plot_classic_orbital_elements_overlay(*orbital_elementss_lists: list[list[np.typing.NDArray]]):
+def plot_classic_orbital_elements_overlay(*orbital_elementss_lists):
     fig, axs = plt.subplots(3, 2, figsize=(12, 10))
 
     for orbital_elementss_list in orbital_elementss_lists:
         t = orbital_elementss_list[0]
         orbital_elementss = orbital_elementss_list[1]
+
+        print(orbital_elementss.shape)
 
         """
         Plots the classic orbital elements over time.

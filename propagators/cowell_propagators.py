@@ -11,7 +11,7 @@ from utils.visualization import (
 from tqdm import tqdm
 
 
-class Cowell_propagator:
+class Unperturbed_propagator:
     """
     Propagates the motion of a body under the influence of a central gravitational field using the two-body problem formulation.
 
@@ -96,10 +96,10 @@ class Cowell_propagator:
         return t, state_vectors
 
 
-    def to_orbital_elements(self) -> list[OrbitalElements]:
-        orbital_elementss = []
+    def to_orbital_elements(self) -> np.typing.NDArray:
+        orbital_elementss = np.zeros((6, self.state_vectors.shape[1]))
         for i in range(self.state_vectors.shape[1]):
-            orbital_elementss.append(get_osculating_elements(self.state_vectors[:, i], self.mu))
+            orbital_elementss[:, i] = get_osculating_elements(self.state_vectors[:, i], self.mu)
         self.orbital_elementss = orbital_elementss
 
         return orbital_elementss
@@ -146,7 +146,7 @@ class PerturbedPropagator:
 
         return t, state_vectors
 
-    def to_orbital_elements(self) -> list[OrbitalElements]:
+    def to_orbital_elements(self) -> np.typing.NDArray:
         orbital_elementss = []
         for i in range(self.state_vectors.shape[1]):
             orbital_elementss.append(get_osculating_elements(self.state_vectors[:, i], self.mu))
