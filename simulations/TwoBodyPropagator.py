@@ -1,4 +1,4 @@
-from .propagators.cowell_propagators import *
+from ..propagators.cowell_propagators import *
 from utils.visualization import plot_3D_view, plot_classic_orbital_elements
 import numpy as np
 

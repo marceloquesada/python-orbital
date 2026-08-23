@@ -1,5 +1,5 @@
-from .utils import visualization
-from .propagators import analytical_propagators
+from utils import visualization
+from propagators import analytical_propagators
 import numpy as np
 
 
@@ -10,10 +10,11 @@ earth_radius = 6378.0  # in km
 mu = 3.986e5
 
 state_vector_0 = np.concatenate((r, v))
-state_vector_0 = col_vec = state_vector_0[:, np.newaxis]
 
 print(state_vector_0.shape)
 propagator = analytical_propagators.Two_body_analytical_propagator(state_vector_0, mu)
-X_I = propagator.propagate(step_size=1)
+t, X_I = propagator.propagate(step_size=1)
 
-visualization.plot_3D_view(X_I)
+print(X_I[1].shape)
+
+visualization.plot_3D_view(t, X_I)

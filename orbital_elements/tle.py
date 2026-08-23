@@ -1,8 +1,8 @@
 import numpy as np
 import re
 
-from simulations.orbital_elements import state_vectors
-from simulations.orbital_elements import elements
+from orbital_elements import state_vectors
+from orbital_elements import elements
 
 
 def TLE_to_orbital_elements(TLE: list[str], mu) -> np.typing.NDArray:

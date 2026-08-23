@@ -1,6 +1,6 @@
 import numpy as np
-from ..orbital_elements import elements
-from ..orbital_utils import ref_systems
+from orbital_elements.elements import *
+from orbital_utils import ref_systems
 from copy import copy
 
 
@@ -9,19 +9,18 @@ class Two_body_analytical_propagator:
         self.state_vector_0 = state_vector_0
         self.mu = mu
 
-        self.orbital_elements = elements.get_osculating_elements(state_vector_0, self.mu)
-        print(self.orbital_elements.shape)
+        self.orbital_elements = get_osculating_elements(state_vector_0, self.mu)
 
     def _get_timestamps(self):
         theta_0 = self.thetas_rad[0]
-        period = elements.get_period(self.state_vector_0[:, 0:3], self.state_vector_0[:, 3:6], self.mu)
-        e = self.orbital_elements[:, 1]
+        period = get_period(self.state_vector_0[:, 0:3], self.state_vector_0[:, 3:6], self.mu)
+        e = self.orbital_elements[1]
         mu = self.mu
-        t_0 = elements.get_analitical_time(theta_0, e, period, 0, mu)
+        t_0 = get_analitical_time(theta_0, e, period, 0, mu)
 
         ts = np.array([])
         for theta in self.thetas_rad:
-            t = elements.get_analitical_time(theta, e, period, t_0, mu)
+            t = get_analitical_time(theta, e, period, t_0, mu)
             ts = np.concatenate((ts, np.array([t])))
 
         return ts
@@ -73,7 +72,7 @@ class Two_body_analytical_propagator:
         return times
 
     def propagate_2d(self, periods: int = 1, step_size: float = 0.01):
-        theta_0 = elements.get_true_anomaly(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
+        theta_0 = get_true_anomaly(self.state_vector_0[0:3], self.state_vector_0[3:6], self.mu)
         thetas = np.arange(theta_0, (periods*360) + theta_0, step_size)
 
         thetas_rad = np.deg2rad(thetas)
@@ -84,8 +83,8 @@ class Two_body_analytical_propagator:
         r = self.state_vector_0[0:3]
         v = self.state_vector_0[3:6]
 
-        h = np.cross(r, v)
-        e = self.orbital_elements[:, 1]
+        h = np.cross(r, v, axis=0)
+        e = self.orbital_elements[1]
         p = np.linalg.norm(h)**2/self.mu
 
         rs = p / (1 + e * np.cos(thetas_rad))

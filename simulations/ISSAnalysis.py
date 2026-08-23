@@ -1,5 +1,5 @@
 from orbital_elements import oeOpsArray
-from simulations.orbital_elements import stateVectorOps
+from orbital_elements import stateVectorOps
 from utils import visualizations
 from utils import types
 from TLE import TLEOps

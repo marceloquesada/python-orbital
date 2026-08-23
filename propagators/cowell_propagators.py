@@ -1,10 +1,10 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from simulations.orbital_elements.elements import (
+from orbital_elements.elements import (
     get_osculating_elements,
     get_period
 )
-from simulations.utils.visualization import (
+from utils.visualization import (
     plot_classic_orbital_elements,
     plot_3D_view
 )

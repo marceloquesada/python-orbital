@@ -1,6 +1,6 @@
 from utils import visualization
-from simulations.orbital_elements import oeOpsArray
-from simulations.utils import stateVectorsOperations
+from orbital_elements import oeOpsArray
+from utils import stateVectorsOperations
 from propagators import analyticalPropagators, Cowell_propagators
 from perturbations import thrust_perturbations
 import numpy as np
