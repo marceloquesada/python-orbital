@@ -1,5 +1,6 @@
 import numpy as np
 
+
 MIN_ALLOWED_VALUE = 1e-10
 
 class Bases:
