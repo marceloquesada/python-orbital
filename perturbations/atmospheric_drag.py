@@ -1,5 +1,6 @@
 import math
 import numpy as np
+from orbital_utils import constants
 
 
 def simple_exponential_density_model(h):
@@ -24,6 +25,49 @@ def simple_exponential_density_model(h):
     rho = rho_0*math.exp(-(h - h_0)/(H))
 
     return rho
+
+
+def get_local_atmosphere_velocity_vector(state_vector):
+    r_vec = state_vector[0:2]
+
+    v_vec = np.array([-constants.w_earth*r_vec[1], constants.w_earth*r_vec[0], 0])
+
+    return v_vec
+
+
+class Atmospheric_drag_perturbation():
+    def __init__(self, contact_surface_area, drag_coef, mass, model='exponential'):  # Other models not yet implemented
+        self.surface_area = contact_surface_area
+        self.drag_coef = drag_coef
+        self.mass = mass
+
+        if model == 'exponential':
+            self.get_density = simple_exponential_density_model
+
+
+    def get_acceleration(self, state_vector, dt):
+        radius = np.linalg.norm(state_vector[0:3])
+        vel = np.linalg.norm(state_vector[3:6])
+
+        altitude = radius - constants.radius_earth
+
+        vel_atmosphere = get_local_atmosphere_velocity_vector(state_vector)
+        vel_rel = vel + vel_atmosphere
+        vel_rel_norm = np.linalg.norm(vel_rel)
+
+        density = self.get_density(altitude)
+
+        a_drag = -0.5*density*self.drag_coef*(self.surface_area/self.mass)*(vel_rel_norm**2)*(vel_rel/vel_rel_norm)
+
+        print(f"radius : {radius:.3f}", end='\t')
+        print(f"vel : {np.linalg.norm(vel):.3f}", end='\t')
+        print(f"vel_rel : {vel_rel_norm:.3f}", end='\t')
+        print(f"a_drag_scalar : {np.linalg.norm(a_drag):.3f}")
+
+        return a_drag
+    
+
+
 
 
 
