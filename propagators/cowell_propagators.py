@@ -105,7 +105,7 @@ class Unperturbed_propagator:
         return orbital_elementss
 
 
-class PerturbedPropagator:
+class Perturbed_propagator:
     def __init__(self, state_vector_0, mu: float, perturbation_funcs: list[any]):
         self.state_vector_0 = state_vector_0
         self.mu = mu
@@ -147,9 +147,10 @@ class PerturbedPropagator:
         return t, state_vectors
 
     def to_orbital_elements(self) -> np.typing.NDArray:
-        orbital_elementss = []
-        for i in range(self.state_vectors.shape[1]):
-            orbital_elementss.append(get_osculating_elements(self.state_vectors[:, i], self.mu))
-        self.orbital_elementss = orbital_elementss
+        orbital_elementss = np.zeros((6, self.state_vectors.shape[1]))
 
+        for i in range(self.state_vectors.shape[1]):
+            orbital_elements = get_osculating_elements(self.state_vectors[:, i], self.mu)
+            orbital_elementss[:, i] = orbital_elements
+        
         return orbital_elementss
