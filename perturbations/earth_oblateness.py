@@ -20,7 +20,7 @@ class J2_perturbation():
                              state_vector[2]*(5*((state_vector[2]**2)/(r**2)) - 3),
                            ], dtype=np.float128)
         
-        a_j2 = -((3*constants.mu_earth*constants.j2_earth*(constants.radius_earth**2))/(2*(r**5))) * pert_vec
+        a_j2 = ((3*constants.mu_earth*constants.j2_earth*(constants.radius_earth**2))/(2*(r**5))) * pert_vec
 
         return a_j2
     
