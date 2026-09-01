@@ -124,7 +124,7 @@ class Perturbed_propagator:
 
         return xdot
 
-    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45') -> np.typing.NDArray:
+    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45', max_step: int = 1) -> np.typing.NDArray:
         r = self.state_vector_0[0:3]
         v = self.state_vector_0[3:6]
         if periods is not None:
@@ -136,7 +136,7 @@ class Perturbed_propagator:
                 t = t[:np.where(t > total_t)[0][0]]
             else:
                 raise Exception("The time array provided cannot cover the specified number of periods, either increase the array or decrease the number of periods")
-    
+        
 
         self.t_1 = t[0]
         solution = solve_ivp(

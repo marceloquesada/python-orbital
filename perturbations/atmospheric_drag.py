@@ -62,16 +62,15 @@ class Atmospheric_drag_perturbation():
         # a_drag = -0.5*density*self.drag_coef*(self.surface_area/self.mass)*(vel_rel_norm**2)*(vel_rel/vel_rel_norm)
         a_drag = part_1*part_2
 
-        print(f"radius : {radius:.3f}", end=', ')
-        print(f"vel : {np.linalg.norm(vel):.3f}", end=', ')
-        print(f"vel_atm : {np.linalg.norm(vel_atmosphere):.3f}", end=', ')
-        print(f"vel_rel : {vel_rel_norm:.3f}", end=', ')
-        print(f"a_drag_scalar : {np.linalg.norm(a_drag)}", end=', ')
-        print(f"part_1 : {part_1}", end=', ')
-        print(f"part_2 : {part_2}", end=', ')
+        # print(f"radius : {radius:.3f}", end=', ')
+        # print(f"vel : {np.linalg.norm(vel):.3f}", end=', ')
+        # print(f"vel_atm : {np.linalg.norm(vel_atmosphere):.3f}", end=', ')
+        # print(f"vel_rel : {vel_rel_norm:.3f}", end=', ')
+        # print(f"a_drag_scalar : {np.linalg.norm(a_drag)}", end=', ')
+        # print(f"part_1 : {part_1}", end=', ')
+        # print(f"part_2 : {part_2}", end=', ')
         # print(f"-0.5*rho*cd*A/m : {-0.5*density*self.drag_coef*(self.surface_area/self.mass)}", end=', ')
         # print(f"v_rel**2 * v_rel_vec/|v_rel| : {(vel_rel_norm**2)*(vel_rel/vel_rel_norm)}", end=', ')
-        print()
 
 
         return a_drag
