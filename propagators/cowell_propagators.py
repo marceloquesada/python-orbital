@@ -57,7 +57,7 @@ class Unperturbed_propagator:
 
         return xdot
 
-    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45', max_step: int = 5) -> np.typing.NDArray:
+    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45') -> np.typing.NDArray:
         r = self.state_vector_0[0:3]
         v = self.state_vector_0[3:6]
 
@@ -85,7 +85,7 @@ class Unperturbed_propagator:
             self.state_vector_0,
             t_eval=t,
             method=integration_method,
-            max_step=max_step
+            max_step=np.mean(np.diff(t))
         )
 
         X = solution.y
