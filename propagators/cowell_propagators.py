@@ -130,15 +130,23 @@ class Perturbed_propagator:
         if periods is not None:
             T = get_period(r, v, self.mu)
 
-        total_t = T*periods
+            total_t = T*periods
 
-        if total_t < t[-1]:
-            t = t[:np.where(t > total_t)[0][0]]
-        else:
-            raise Exception("The time array provided cannot cover the specified number of periods, either increase the array or decrease the number of periods")
+            if total_t < t[-1]:
+                t = t[:np.where(t > total_t)[0][0]]
+            else:
+                raise Exception("The time array provided cannot cover the specified number of periods, either increase the array or decrease the number of periods")
+    
 
         self.t_1 = t[0]
-        solution = solve_ivp(self._x_dot, (t[0], t[-1]), self.state_vector_0, t_eval=t, method=integration_method)
+        solution = solve_ivp(
+                    self._x_dot,
+                    (t[0], t[-1]),
+                    self.state_vector_0,
+                    t_eval=t,
+                    method=integration_method,
+                    max_step=np.mean(np.diff(t))
+                )
         X = solution.y
 
         state_vectors = X
