@@ -4,6 +4,7 @@ from orbital_utils import constants
 from orbital_elements import tle, elements
 from utils import visualization
 
+import matplotlib.pyplot as plt
 import numpy as np
 
 
@@ -17,7 +18,7 @@ def get_analitical_raan_drift(state_vector):
     return Omegadot
 
 
-t = np.arange(0, 1e5, 10)
+t = np.arange(0, 1e5, 5)
 
 tle1 = ["1 25544U 98067A   25275.46710094  .00015763  00000+0  28741-3 0  9998",
         "2 25544  51.6327 135.3521 0001043 189.2069 170.8900 15.49620641531809"
@@ -50,6 +51,14 @@ for i in range(oes_num.shape[1]):
     oes_j2_comparison[3, i] = Omega_0 + t_num[i]*Omegadot
 
 
+# visualization.plot_3D_overlay(X_analit, X_num)
+# visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num], [t_num, oes_j2_comparison])
 
-visualization.plot_3D_overlay(X_analit, X_num)
-visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num], [t_num, oes_j2_comparison])
+plt.plot(t_num, oes_num[3, :], lw=0.5, label='Simulação numérica')
+plt.plot(t_num, oes_j2_comparison[3, :], lw=0.5, label='Desvio analítico esperado')
+plt.title('Efeito de perturbação J2')
+plt.xlabel('Tempo (s)')
+plt.ylabel('Ascenção reta do nodo ascendente (º)')
+plt.grid(True)
+plt.legend()
+plt.show()

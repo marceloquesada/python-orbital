@@ -57,19 +57,19 @@ class Unperturbed_propagator:
 
         return xdot
 
-    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45', max_step: int = 5) -> np.typing.NDArray:
+    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45') -> np.typing.NDArray:
         r = self.state_vector_0[0:3]
         v = self.state_vector_0[3:6]
 
         if periods is not None:
             T = get_period(r, v, self.mu)
 
-        total_t = T*periods
+            total_t = T*periods
 
-        if total_t < t[-1]:
-            t = t[:np.where(t > total_t)[0][0]]
-        else:
-            raise Exception("The time array provided cannot cover the specified number of periods, either increase the array or decrease the number of periods")
+            if total_t < t[-1]:
+                t = t[:np.where(t > total_t)[0][0]]
+            else:
+                raise Exception("The time array provided cannot cover the specified number of periods, either increase the array or decrease the number of periods")
 
         # Handle progress bar
         self.first_t = t[0]
@@ -85,7 +85,7 @@ class Unperturbed_propagator:
             self.state_vector_0,
             t_eval=t,
             method=integration_method,
-            max_step=max_step
+            max_step=np.mean(np.diff(t))
         )
 
         X = solution.y
@@ -116,11 +116,14 @@ class Perturbed_propagator:
         xdot[0:3] = x[3:6]
         a = -(self.mu/(np.linalg.norm(x[0:3]))**3)*x[0:3]
         
-        dt = t - self.t_1
+        dt = t - self.first_t
         for perturbation in self.perturbations:
             a += perturbation.get_acceleration(x, dt)
 
         xdot[3:6] = a
+
+        self.progress_bar.update(round(t -self.first_t -self.current_t))
+        self.current_t = t
 
         return xdot
 
@@ -136,9 +139,15 @@ class Perturbed_propagator:
                 t = t[:np.where(t > total_t)[0][0]]
             else:
                 raise Exception("The time array provided cannot cover the specified number of periods, either increase the array or decrease the number of periods")
-    
+        
 
-        self.t_1 = t[0]
+         # Handle progress bar
+        self.first_t = t[0]
+        self.last_t = t[-1]
+        self.current_t = t[0]
+        
+        self.progress_bar = tqdm(total=round(t[-1] - t[0] + 1))
+
         solution = solve_ivp(
                     self._x_dot,
                     (t[0], t[-1]),
