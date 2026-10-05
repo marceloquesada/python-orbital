@@ -51,8 +51,8 @@ for i in range(oes_num.shape[1]):
     oes_j2_comparison[3, i] = Omega_0 + t_num[i]*Omegadot
 
 
-# visualization.plot_3D_overlay(X_analit, X_num)
-# visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num], [t_num, oes_j2_comparison])
+visualization.plot_3D_overlay(X_analit, X_num)
+visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num], [t_num, oes_j2_comparison])
 
 plt.plot(t_num, oes_num[3, :], lw=0.5, label='Simulação numérica')
 plt.plot(t_num, oes_j2_comparison[3, :], lw=0.5, label='Desvio analítico esperado')

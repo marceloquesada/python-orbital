@@ -2,16 +2,16 @@ from propagators import cowell_propagators, analytical_propagators
 from perturbations import atmospheric_drag
 from orbital_utils import constants
 from orbital_elements import tle
-from utils import visualization
+from utils import visualization, saving
 
 import numpy as np
 
 
 contact_area = 0.1**2  # Lateral area for cubesat
-mass = 1
+mass = 5
 drag_coef = 2.5
 
-t = np.arange(0, 1e6, 10)
+t = np.arange(0, 1e4, 10)
 
 tle1 = ["1 25544U 98067A   25275.46710094  .00015763  00000+0  28741-3 0  9998",
         "2 25544  51.6327 135.3521 0001043 189.2069 170.8900 15.49620641531809"
@@ -30,11 +30,10 @@ drag_func = atmospheric_drag.Atmospheric_drag_perturbation(contact_area, drag_co
 num_prop = cowell_propagators.Perturbed_propagator(state_vector_0, constants.mu_earth, [drag_func])
 t_num, X_num = num_prop.propagate(t)
 
-print(X_analit.shape)
-print(X_num.shape)
+saving.save_orbit(t_num, X_num)
 
 
-oes_num = num_prop.to_orbital_elements()
+# oes_num = num_prop.to_orbital_elements()
 
-visualization.plot_3D_overlay(X_analit, X_num)
-visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num])
+# visualization.plot_3D_overlay(X_analit, X_num)
+# visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num])

@@ -50,8 +50,8 @@ class Atmospheric_drag_perturbation():
 
         altitude = radius - constants.radius_earth
 
-        vel_atmosphere = get_local_atmosphere_velocity_vector(state_vector)
-        vel_rel = vel + vel_atmosphere
+        w = constants.w_earth
+        vel_rel = vel - np.cross(np.array([0, -w, w]), state_vector[0:3])
         vel_rel_norm = np.linalg.norm(vel_rel)
 
         density = self.get_density(altitude)

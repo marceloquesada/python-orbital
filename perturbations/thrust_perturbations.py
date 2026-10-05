@@ -72,9 +72,6 @@ class FixedMassDeltaVThrust:
         self.deltaV = deltaV
         self.center_angle = center_angle
 
-    def get_arc_interval(self):
-
-
     def get_acceleration(self, state_vector, dt):
         theta = orbitalElements.get_true_anomaly(state_vector[0:3], state_vector[3:6], self.mu)
         mass = self.m_sat
