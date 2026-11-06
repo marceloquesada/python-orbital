@@ -50,6 +50,8 @@ Omegadot = np.rad2deg(get_analitical_raan_drift(state_vector_0))
 for i in range(oes_num.shape[1]):
     oes_j2_comparison[3, i] = Omega_0 + t_num[i]*Omegadot
 
+print(t_analit.shape)
+print(oes_analit.shape)
 
 visualization.plot_3D_overlay(X_analit, X_num)
 visualization.plot_classic_orbital_elements_overlay([t_analit, oes_analit], [t_num, oes_num], [t_num, oes_j2_comparison])

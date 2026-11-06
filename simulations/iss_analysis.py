@@ -15,6 +15,7 @@ tle1 = ["1 25544U 98067A   25275.46710094  .00015763  00000+0  28741-3 0  9998",
        ]
 
 state_vector_0 = tle.TLE_to_state_vectors(tle1, mu)
+print(state_vector_0)
 
 propagator_analit = analytical_propagators.Two_body_analytical_propagator(state_vector_0, mu)
 t_analit, X_I_analit = propagator_analit.propagate(step_size=0.1)

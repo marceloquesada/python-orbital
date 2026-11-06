@@ -1,15 +1,13 @@
 import numpy as np
 from scipy.integrate import solve_ivp
-from orbital_elements.elements import (
-    get_osculating_elements,
-    get_period
-)
+from orbital_elements.elements import *
 from utils.visualization import (
     plot_classic_orbital_elements,
     plot_3D_view
 )
+from orbital_utils import constants
 from tqdm import tqdm
-
+from perturbations import atmospheric_drag
 
 class Unperturbed_propagator:
     """
@@ -112,6 +110,8 @@ class Perturbed_propagator:
         self.perturbations = perturbation_funcs
 
     def _x_dot(self, t, x):
+        # if get_major_axis(x[0:3], x[3:6], self.mu) < (constants.radius_earth + 5):  # Avoid crash
+        #     return np.zeros_like(x)
         xdot = np.zeros_like(x)
         xdot[0:3] = x[3:6]
         a = -(self.mu/(np.linalg.norm(x[0:3]))**3)*x[0:3]
@@ -119,6 +119,68 @@ class Perturbed_propagator:
         dt = t - self.first_t
         for perturbation in self.perturbations:
             a += perturbation.get_acceleration(x, dt)
+
+        xdot[3:6] = a
+
+        self.progress_bar.update(round(t-self.current_t))
+        self.current_t = t
+
+        return xdot
+
+    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45') -> np.typing.NDArray:
+        r = self.state_vector_0[0:3]
+        v = self.state_vector_0[3:6]
+
+        # Handle progress bar
+        self.first_t = t[0]
+        print(t[0])
+        self.last_t = t[-1]
+        self.current_t = t[0]
+        
+        self.progress_bar = tqdm(total=round(t[-1] - t[0] + 1))
+
+        solution = solve_ivp(
+                    self._x_dot,
+                    (t[0], t[-1]),
+                    self.state_vector_0,
+                    t_eval=t,
+                    method=integration_method,
+                    max_step=np.max(np.diff(t))
+                )
+        X = solution.y
+
+        state_vectors = X
+        self.state_vectors = state_vectors
+
+        return t, state_vectors
+
+    def to_orbital_elements(self) -> np.typing.NDArray:
+        orbital_elementss = np.zeros((6, self.state_vectors.shape[1]))
+
+        for i in range(self.state_vectors.shape[1]):
+            orbital_elements = get_osculating_elements(self.state_vectors[:, i], self.mu)
+            orbital_elementss[:, i] = orbital_elements
+        
+        return orbital_elementss
+
+class Drag_propagator:
+    def __init__(self, state_vector_0, mu: float, mass, area, coef_drag):
+        self.state_vector_0 = state_vector_0
+        self.mu = mu
+        self.mass = mass
+        self.area = area
+        self.coef_drag = coef_drag
+
+    def _x_dot(self, t, x):
+        # if get_major_axis(x[0:3], x[3:6], self.mu) < (constants.radius_earth + 5):  # Avoid crash
+        #     return np.zeros_like(x)
+        xdot = np.zeros_like(x)
+        xdot[0:3] = x[3:6]
+        a = -(self.mu/(np.linalg.norm(x[0:3]))**3)*x[0:3]
+        
+        dt = t - self.first_t
+        
+        a += atmospheric_drag.compiled_get_acceleration(x, self.coef_drag, self.area, self.mass)
 
         xdot[3:6] = a
 
