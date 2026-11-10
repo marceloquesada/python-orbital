@@ -26,7 +26,7 @@ def simple_exponential_density_model(h):
         i = n - 1
     else:
         i = np.searchsorted(_BASE_H, h, side='right') - 1
-    return _DENSITY[i] * np.exp(-(h - _BASE_H[i]) / _SCALE_H[i]) * 10**8  # kg/km^3
+    return _DENSITY[i] * np.exp(-(h - _BASE_H[i]) / _SCALE_H[i]) * 10**9  # kg/km^3
 
 
 class Atmospheric_drag_perturbation_exp:

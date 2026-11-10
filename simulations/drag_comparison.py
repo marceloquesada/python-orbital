@@ -17,7 +17,7 @@ k_p = 4    # Geomagnetic index
 epoch = 0
 
 t_initial = 0
-t_max_days = 30
+t_max_days = 65
 t_step = 50
 decimation = 1
 
@@ -29,6 +29,7 @@ state_vector_0 = state_vectors.get_state_vectors(oes_0, constants.mu_earth)
 
 # NUMERICAL PROPAGATOR
 drag_func = atmospheric_drag.Atmospheric_drag_perturbation_td88(drag_coef, gamma, f_x, f_0, k_p, epoch)
+# drag_func = atmospheric_drag.Atmospheric_drag_perturbation_exp(drag_coef, gamma)
 num_prop = cowell_propagators.Perturbed_propagator(state_vector_0, constants.mu_earth, [drag_func])
 
 t_num, X_num = num_prop.propagate(t, integration_method="RK45")
