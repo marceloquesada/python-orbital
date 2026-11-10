@@ -3,58 +3,55 @@ from perturbations import atmospheric_drag
 from orbital_utils import constants
 from orbital_elements import tle, state_vectors, elements
 from utils import csv, visualization
+import datetime
 
 import numpy as np
 
 
-mass = 5
-contact_area = (0.1**2)*mass  # Lateral area for cubesat
+gamma = 5  # Area-to-mass ratio [m^2/kg]
 drag_coef = 2.2
+f_x = 150  # Daily solar flux [cm/day]
+f_0 = 150  # Mean solar flux over 3 solar rotations [cm/day]
+k_p = 4    # Geomagnetic index
+# epoch = datetime.datetime(1, 3, 21, 15, 0, 0, tzinfo=datetime.timezone.utc).timestamp()  # Day 80, 15h UTC
+epoch = 0
 
-parts = 1000
 t_initial = 0
-t_max = 1e9
+t_max_days = 30
 t_step = 50
-decimation = 100
+decimation = 1
 
-t = np.arange(t_initial, t_max, t_step)
+t = np.arange(t_initial, t_max_days*(24*3600), t_step)
 
-oes_0 = np.array([500+constants.radius_earth, 0.00001, 30, 200, 200, 0])
+oes_0 = np.array([7100, 0.001, 0.0002, 200, 200, 0])
 state_vector_0 = state_vectors.get_state_vectors(oes_0, constants.mu_earth)
 # state_vector_0 = np.array([-6077.3617217084,-739.7225171285,-2712.6578881687,-2.2292253536,-4.1335673096,6.1212036073])
 
-for i in range(parts):
+# NUMERICAL PROPAGATOR
+drag_func = atmospheric_drag.Atmospheric_drag_perturbation_td88(drag_coef, gamma, f_x, f_0, k_p, epoch)
+num_prop = cowell_propagators.Perturbed_propagator(state_vector_0, constants.mu_earth, [drag_func])
 
-        t_part = t[round((len(t)/parts)*i):round((len(t)/parts)*(i+1))]
+t_num, X_num = num_prop.propagate(t, integration_method="RK45")
 
-        # NUMERICAL PROPAGATOR
-        drag_func = atmospheric_drag.Atmospheric_drag_perturbation(contact_area, drag_coef, mass)
-        num_prop = cowell_propagators.Perturbed_propagator(state_vector_0, constants.mu_earth, [drag_func])
+oes_num = num_prop.to_orbital_elements()
 
-        t_num, X_num = num_prop.propagate(t_part, integration_method="Radau")
+visualization.plot_classic_orbital_elements_overlay([t_num/(24*3600), oes_num])
 
-        state_vector_0 = X_num[:,-1]
+state_vector_0 = X_num[:,-1]
 
-        X_f = np.empty_like(X_num)
-        t_f = []
-        dec_counter = 0
-        j = 0
-        for i in range(len(t_num)):
-                if dec_counter >= decimation:
-                        t_f.append(t_num[i])
-                        X_f[:, j] = X_num[:, i]
-                        dec_counter = 0
-                        j += 1
-                else:
-                        dec_counter+=1
-
-        X_ff = X_f[:, :j]
-        if False:
-                append = False
+X_f = np.empty_like(X_num)
+t_f = []
+dec_counter = 0
+j = 0
+for i in range(len(t_num)):
+        if dec_counter >= decimation:
+                t_f.append(t_num[i])
+                X_f[:, j] = X_num[:, i]
+                dec_counter = 0
+                j += 1
         else:
-                append = True
+                dec_counter+=1
 
+X_ff = X_f[:, :j]
 
-        print(X_ff.shape)
-
-        csv.save_orbit(t_f, X_ff, append=append)
+csv.save_orbit(t_f, X_ff, append=False)

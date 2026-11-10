@@ -20,7 +20,7 @@ def TLE_to_orbital_elements(TLE: list[str], mu) -> np.typing.NDArray:
     a = np.cbrt(mu/(n**2))
 
     # Getting true anomaly from mean anomaly
-    theta = elements.get_true_anomaly_from_mean(e, M)
+    theta = elements.get_true_anomaly_from_mean(e, np.deg2rad(M))
 
     oe = np.array([a, e, i, Omega, omega, theta])
 

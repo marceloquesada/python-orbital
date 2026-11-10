@@ -14,4 +14,4 @@ mass_earth = 5.97219e24  # Kg
 radius_earth = 6378.137 # Km
 mu_earth = 3.986004418e5
 w_earth = 7.2921150e-5 # rad/s
-j2_earth = 1082.64e-6
+j2_earth = 1082.63e-6 # Km
