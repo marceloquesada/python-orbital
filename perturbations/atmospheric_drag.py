@@ -1,5 +1,6 @@
 import datetime
 import numpy as np
+import pymsis
 from numba import njit
 from orbital_utils import constants, geodetic
 
@@ -128,6 +129,55 @@ class Atmospheric_drag_perturbation_td88:
 
         rho = td_88(altitude, np.deg2rad(lat), local_time, self.f_x, self.f_0, self.k_p, d)*10**9  # kg/km^3
 
+        v_rel = v - np.cross(np.array([0.0, 0.0, constants.w_earth]), r)
+
+        drag = -v_rel*0.5*rho*np.linalg.norm(v_rel)*self.drag_coef*self.gamma
+
+        return drag
+
+# Kp (0..9, integer thirds allowed) -> ap [2 nT] conversion table (Bartels)
+_KP_TABLE = np.array([0, 1/3, 2/3, 1, 4/3, 5/3, 2, 7/3, 8/3, 3, 10/3, 11/3, 4, 13/3, 14/3,
+                      5, 16/3, 17/3, 6, 19/3, 20/3, 7, 22/3, 23/3, 8, 25/3, 26/3, 9])
+_AP_TABLE = np.array([0, 2, 3, 4, 5, 6, 7, 9, 12, 15, 18, 22, 27, 32, 39,
+                      48, 56, 67, 80, 94, 111, 132, 154, 179, 207, 236, 300, 400])
+
+
+def kp_to_ap(k_p):
+    """Convert a planetary Kp index to the equivalent ap index (linear interpolation of the Bartels table)."""
+    return float(np.interp(k_p, _KP_TABLE, _AP_TABLE))
+
+
+class Atmospheric_drag_perturbation_msis:
+    def __init__(self, drag_coef, gamma, f107, f107a, ap, epoch, version=2.1):
+        """
+        Drag with NRLMSIS density (pymsis).
+
+        drag_coef: C_D
+        gamma:     area-to-mass ratio [m^2/kg]
+        f107:      daily F10.7 solar flux (previous day) [sfu]
+        f107a:     81-day centred average F10.7 [sfu]
+        ap:        daily geomagnetic ap index (use kp_to_ap() to convert from Kp)
+        epoch:     start of the propagation as Unix time (UTC seconds)
+        version:   MSIS version passed to pymsis (2.1, 2.0, or 0 for NRLMSISE-00)
+        """
+        self.gamma = gamma/(10**6)  # km^2/kg
+        self.drag_coef = drag_coef
+        self.epoch = epoch
+        self.f107 = f107
+        self.f107a = f107a
+        self.aps = [[ap]*7]
+        self.version = version
+
+    def get_acceleration(self, state_vector, dt):
+        # dt is the elapsed time since the start of the propagation (not an increment)
+        lat, lon, alt = geodetic.state_vector_to_lat_lon(state_vector, dt, self.epoch)
+        date = np.datetime64(int(round((self.epoch + dt)*1e6)), 'us')
+
+        rho = pymsis.calculate(date, lon, lat, alt, f107s=self.f107, f107as=self.f107a,
+                               aps=self.aps, version=self.version)
+        rho = float(np.squeeze(rho)[pymsis.Variable.MASS_DENSITY])*10**9  # kg/m^3 -> kg/km^3
+
+        r, v = state_vector[0:3], state_vector[3:6]
         v_rel = v - np.cross(np.array([0.0, 0.0, constants.w_earth]), r)
 
         drag = -v_rel*0.5*rho*np.linalg.norm(v_rel)*self.drag_coef*self.gamma

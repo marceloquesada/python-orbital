@@ -10,9 +10,9 @@ import numpy as np
 
 gamma = 5  # Area-to-mass ratio [m^2/kg]
 drag_coef = 2.2
-f_x = 150  # Daily solar flux [cm/day]
-f_0 = 150  # Mean solar flux over 3 solar rotations [cm/day]
-k_p = 4    # Geomagnetic index
+f_x = 150  # Daily F10.7 solar flux [sfu]
+f_0 = 150  # 81-day mean F10.7 solar flux [sfu]
+k_p = 4    # Geomagnetic index (converted to ap = 27 for MSIS)
 # epoch = datetime.datetime(1, 3, 21, 15, 0, 0, tzinfo=datetime.timezone.utc).timestamp()  # Day 80, 15h UTC
 epoch = 0
 
@@ -28,7 +28,8 @@ state_vector_0 = state_vectors.get_state_vectors(oes_0, constants.mu_earth)
 # state_vector_0 = np.array([-6077.3617217084,-739.7225171285,-2712.6578881687,-2.2292253536,-4.1335673096,6.1212036073])
 
 # NUMERICAL PROPAGATOR
-drag_func = atmospheric_drag.Atmospheric_drag_perturbation_td88(drag_coef, gamma, f_x, f_0, k_p, epoch)
+# drag_func = atmospheric_drag.Atmospheric_drag_perturbation_td88(drag_coef, gamma, f_x, f_0, k_p, epoch)
+drag_func = atmospheric_drag.Atmospheric_drag_perturbation_msis(drag_coef, gamma, f_x, f_0, atmospheric_drag.kp_to_ap(k_p), epoch)
 # drag_func = atmospheric_drag.Atmospheric_drag_perturbation_exp(drag_coef, gamma)
 num_prop = cowell_propagators.Perturbed_propagator(state_vector_0, constants.mu_earth, [drag_func])
 

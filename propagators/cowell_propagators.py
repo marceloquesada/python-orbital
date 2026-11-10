@@ -127,7 +127,14 @@ class Perturbed_propagator:
 
         return xdot
 
-    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45') -> np.typing.NDArray:
+    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45',
+                  **solver_options) -> np.typing.NDArray:
+        """
+        solver_options are forwarded to scipy's solve_ivp (e.g. events, rtol, atol, max_step).
+        max_step defaults to the largest spacing of t. If a terminal event fires, the returned
+        time array and state vectors stop at the last sample before the event; the full
+        solve_ivp result (including t_events) is kept in self.solution.
+        """
         r = self.state_vector_0[0:3]
         v = self.state_vector_0[3:6]
 
@@ -136,8 +143,11 @@ class Perturbed_propagator:
         print(t[0])
         self.last_t = t[-1]
         self.current_t = t[0]
-        
+
         self.progress_bar = tqdm(total=round(t[-1] - t[0] + 1))
+
+        options = {"max_step": np.max(np.diff(t))}
+        options.update(solver_options)
 
         solution = solve_ivp(
                     self._x_dot,
@@ -145,14 +155,15 @@ class Perturbed_propagator:
                     self.state_vector_0,
                     t_eval=t,
                     method=integration_method,
-                    max_step=np.max(np.diff(t))
+                    **options
                 )
+        self.solution = solution
         X = solution.y
 
         state_vectors = X
         self.state_vectors = state_vectors
 
-        return t, state_vectors
+        return solution.t, state_vectors
 
     def to_orbital_elements(self) -> np.typing.NDArray:
         orbital_elementss = np.zeros((6, self.state_vectors.shape[1]))
