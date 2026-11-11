@@ -4,30 +4,29 @@ import pymsis
 from numba import njit
 from orbital_utils import constants, geodetic
 
+# US Standard Atmosphere 1976, exponential interpolation (Curtis, Orbital Mechanics for
+# Engineering Students, Appendix D.39 "atmosphere.m")
 _BASE_H = np.array([0, 25, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 140,
-                    150, 180, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000])
-_DENSITY = np.array([1.225, 3.899e-2, 1.774e-2, 3.972e-3, 1.057e-3, 3.206e-4, 8.770e-5,
-                     1.905e-5, 3.396e-6, 5.297e-7, 9.661e-8, 2.438e-8, 8.484e-9, 3.845e-9,
-                     2.070e-9, 5.464e-10, 2.789e-10, 7.248e-11, 2.418e-11, 9.518e-12,
-                     3.725e-12, 1.585e-12, 6.967e-13, 1.454e-13, 3.614e-14, 1.170e-14,
-                     5.245e-15, 3.019e-15])
-_SCALE_H = np.array([7.249, 6.349, 6.682, 7.554, 8.382, 7.714, 6.549, 5.799, 5.382, 5.877,
-                     7.263, 9.473, 12.636, 16.149, 22.523, 29.740, 37.105, 45.546, 53.628,
-                     53.298, 58.515, 60.828, 63.822, 71.835, 88.667, 124.64, 181.05, 268.00])
+                    150, 180, 200, 250, 300, 350, 400, 450, 500, 600, 700, 800, 900, 1000])  # km
+_DENSITY = np.array([1.225, 4.008e-2, 1.841e-2, 3.996e-3, 1.027e-3, 3.097e-4, 8.283e-5,
+                     1.846e-5, 3.416e-6, 5.606e-7, 9.708e-8, 2.222e-8, 8.152e-9, 3.831e-9,
+                     2.076e-9, 5.194e-10, 2.541e-10, 6.073e-11, 1.916e-11, 7.014e-12, 2.803e-12,
+                     1.184e-12, 5.215e-13, 1.137e-13, 3.070e-14, 1.136e-14, 5.759e-15, 3.561e-15])  # kg/m^3
+_SCALE_H = np.array([7.310, 6.427, 6.546, 7.360, 8.342, 7.583, 6.661,
+                     5.927, 5.533, 5.703, 6.782, 9.973, 13.243, 16.322,
+                     21.652, 27.974, 34.934, 43.342, 49.755, 54.513, 58.019,
+                     60.980, 65.654, 76.377, 100.587, 147.203, 208.020])  # km, one per interval (27)
 
 
 def simple_exponential_density_model(h):
-    n = _BASE_H.shape[0]
-    if h < 1:
-        return 0.0
+    """Density [kg/km^3] at geometric altitude h [km], USSA76 exponential interpolation (Curtis)."""
+    # Altitudes outside 0-1000 km are clamped, as in Curtis
+    z = min(max(h, _BASE_H[0]), _BASE_H[-1])
 
-    if h <= _BASE_H[0]:
-        i = 0
-    elif h >= _BASE_H[n - 1]:
-        i = n - 1
-    else:
-        i = np.searchsorted(_BASE_H, h, side='right') - 1
-    return _DENSITY[i] * np.exp(-(h - _BASE_H[i]) / _SCALE_H[i]) * 10**9  # kg/km^3
+    # Interval i such that _BASE_H[i] <= z < _BASE_H[i+1]; z = 1000 km uses the last interval
+    i = min(np.searchsorted(_BASE_H, z, side='right') - 1, _SCALE_H.shape[0] - 1)
+
+    return _DENSITY[i] * np.exp(-(z - _BASE_H[i]) / _SCALE_H[i]) * 10**9  # kg/m^3 -> kg/km^3
 
 
 class Atmospheric_drag_perturbation_exp:
@@ -44,6 +43,62 @@ class Atmospheric_drag_perturbation_exp:
         rho = simple_exponential_density_model(altitude)
 
         v_rel = v - np.cross(np.array([0.0, 0.0, constants.w_earth]), r)
+
+        drag = -v_rel*0.5*rho*np.linalg.norm(v_rel)*self.drag_coef*self.gamma
+
+        return drag
+
+
+def ips_density_model(h, f107, ap):
+    """
+    Density [kg/km^3] at altitude h [km] from the IPS Radio and Space Services (Australian Space
+    Weather Agency) model, "Satellite Orbital Decay Calculations" (Kennewell, updated by R. Panwar):
+
+        T = 900 + 2.5 (F10.7 - 70) + 1.5 Ap        [K]
+        m = 27 - 0.012 (h - 200)
+        H = T / m                                   [km]
+        rho = 6e-10 exp(-(h - 175) / H)             [kg/m^3]
+
+    Fitted for 180 < h < 500 km (de Vries, LLNL-TR-453771, also uses it up to 700 km).
+    f107: solar radio flux, usually the 90-day average [sfu]; ap: geomagnetic Ap index.
+    """
+    T = 900 + 2.5*(f107 - 70) + 1.5*ap
+    m = 27 - 0.012*(h - 200)
+    if m <= 0:  # Formula breaks down (H -> infinity) above ~2450 km; no drag that high
+        return 0.0
+    H = T/m
+
+    return 6e-10*np.exp(-(h - 175)/H)*10**9  # kg/m^3 -> kg/km^3
+
+
+class Atmospheric_drag_perturbation_ips:
+    def __init__(self, drag_coef, gamma, f107, ap, rotating_atmosphere=True):
+        """
+        Drag with the IPS exponential, variable-scale-height density (see ips_density_model).
+
+        drag_coef:           C_D
+        gamma:               area-to-mass ratio [m^2/kg]
+        f107:                solar radio flux (90-day average) [sfu]
+        ap:                  geomagnetic Ap index
+        rotating_atmosphere: if False, drag uses the inertial velocity (as in the IPS worked example)
+        """
+        self.gamma = gamma/(10**6)  # km^2/kg
+        self.drag_coef = drag_coef
+        self.f107 = f107
+        self.ap = ap
+        self.rotating_atmosphere = rotating_atmosphere
+
+    def get_acceleration(self, state_vector, dt=None):
+        r, v = state_vector[0:3], state_vector[3:6]
+
+        altitude = np.linalg.norm(r) - constants.radius_earth
+
+        rho = ips_density_model(altitude, self.f107, self.ap)
+
+        if self.rotating_atmosphere:
+            v_rel = v - np.cross(np.array([0.0, 0.0, constants.w_earth]), r)
+        else:
+            v_rel = v
 
         drag = -v_rel*0.5*rho*np.linalg.norm(v_rel)*self.drag_coef*self.gamma
 
