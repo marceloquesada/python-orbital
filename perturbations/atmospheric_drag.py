@@ -71,27 +71,47 @@ def ips_density_model(h, f107, ap):
     return 6e-10*np.exp(-(h - 175)/H)*10**9  # kg/m^3 -> kg/km^3
 
 
+_IPS_ARTICLE_RE = 6378000.0  # Earth radius used by the IPS article program [m]
+
+
+def ips_article_altitude(h):
+    """
+    Altitude [km] that the IPS article's QBASIC program "sees" for a true altitude h [km].
+
+    The program recovers the orbital radius from the period with R = (G Me P^2 / 4 pi^2) ^ .33333
+    instead of ^(1/3), i.e. R_used = R^0.99999 (R in metres), which places the satellite ~1.05 km
+    lower than it is. Since the density is evaluated at this lower altitude, the published decay
+    table and the "Re-entry after 46 days" result decay faster than the model itself predicts.
+    """
+    return ((_IPS_ARTICLE_RE + h*1e3)**(3*0.33333) - _IPS_ARTICLE_RE)/1e3
+
+
 class Atmospheric_drag_perturbation_ips:
-    def __init__(self, drag_coef, gamma, f107, ap, rotating_atmosphere=True):
+    def __init__(self, drag_coef, gamma, f107, ap, rotating_atmosphere=True, emulate_article_rounding=False):
         """
         Drag with the IPS exponential, variable-scale-height density (see ips_density_model).
 
-        drag_coef:           C_D
-        gamma:               area-to-mass ratio [m^2/kg]
-        f107:                solar radio flux (90-day average) [sfu]
-        ap:                  geomagnetic Ap index
-        rotating_atmosphere: if False, drag uses the inertial velocity (as in the IPS worked example)
+        drag_coef:                C_D
+        gamma:                    area-to-mass ratio [m^2/kg]
+        f107:                     solar radio flux (90-day average) [sfu]
+        ap:                       geomagnetic Ap index
+        rotating_atmosphere:      if False, drag uses the inertial velocity (as in the IPS worked example)
+        emulate_article_rounding: if True, evaluate the density at ips_article_altitude(h) to reproduce the
+                                  cube-root rounding error of the IPS article program (and its published table)
         """
         self.gamma = gamma/(10**6)  # km^2/kg
         self.drag_coef = drag_coef
         self.f107 = f107
         self.ap = ap
         self.rotating_atmosphere = rotating_atmosphere
+        self.emulate_article_rounding = emulate_article_rounding
 
     def get_acceleration(self, state_vector, dt=None):
         r, v = state_vector[0:3], state_vector[3:6]
 
         altitude = np.linalg.norm(r) - constants.radius_earth
+        if self.emulate_article_rounding:
+            altitude = ips_article_altitude(altitude)
 
         rho = ips_density_model(altitude, self.f107, self.ap)
 

@@ -34,6 +34,7 @@ ap = 0                           # Geomagnetic Ap index
 k_p = 0                          # Kp equivalent to Ap = 0 (used by TD-88)
 epoch = datetime.datetime(2019, 3, 21, 15, 0, 0, tzinfo=datetime.timezone.utc).timestamp()  # Not given by IPS
 ips_rotating_atmosphere = False  # The IPS article neglects atmospheric rotation; True for consistency with the other models
+ips_emulate_article_rounding = True  # Reproduce the article program's cube-root rounding (^.33333) to match its table
 
 oes_0 = np.array([constants.radius_earth + 300, 0.0, 0.0, 0.0, 0.0, 0.0])
 
@@ -55,15 +56,22 @@ IPS_DECAY_DAYS = 46
 
 
 models = {
-    "Exponential (USSA76, Curtis)": atmospheric_drag.Atmospheric_drag_perturbation_exp(drag_coef, gamma),
+    # "Exponential (USSA76, Curtis)": atmospheric_drag.Atmospheric_drag_perturbation_exp(drag_coef, gamma),
     "IPS": atmospheric_drag.Atmospheric_drag_perturbation_ips(
-        drag_coef, gamma, f107, ap, rotating_atmosphere=ips_rotating_atmosphere)
+        drag_coef, gamma, f107, ap, rotating_atmosphere=ips_rotating_atmosphere,
+        emulate_article_rounding=ips_emulate_article_rounding)
 }
 
 
 def reentry(t, x):
     return np.linalg.norm(x[0:3]) - (constants.radius_earth + reentry_altitude)
 reentry.terminal = True
+
+
+def reentry_article(t, x):
+    # Same as reentry, but on the altitude the IPS article program uses (with its rounding error)
+    return atmospheric_drag.ips_article_altitude(np.linalg.norm(x[0:3]) - constants.radius_earth) - reentry_altitude
+reentry_article.terminal = True
 
 
 state_vector_0 = state_vectors.get_state_vectors(oes_0, constants.mu_earth)
@@ -73,8 +81,11 @@ fig, ax = plt.subplots(figsize=(9, 5))
 
 for name, perturbation in models.items():
     start = time.time()
+    article_rounding = getattr(perturbation, "emulate_article_rounding", False)
+
     num_prop = cowell_propagators.Perturbed_propagator(state_vector_0, constants.mu_earth, [perturbation])
-    t_num, X_num = num_prop.propagate(t, integration_method="RK45", events=reentry, rtol=1e-9, atol=1e-9)
+    t_num, X_num = num_prop.propagate(t, integration_method="RK45", rtol=1e-9, atol=1e-9,
+                                      events=reentry_article if article_rounding else reentry)
     num_prop.progress_bar.close()
 
     events = num_prop.solution.t_events[0]
@@ -85,6 +96,9 @@ for name, perturbation in models.items():
     t_plot, X_plot = t_num[::stride], X_num[:, ::stride]
     sma = np.array([elements.get_major_axis(X_plot[0:3, k], X_plot[3:6, k], constants.mu_earth)
                     for k in range(X_plot.shape[1])])
+    if article_rounding:
+        # Express the result as the article does: rounded altitude above R_e = 6378 km
+        sma = 6378 + atmospheric_drag.ips_article_altitude(sma - constants.radius_earth)
 
     if t_reentry is None:
         label = f"{name} (no re-entry in {t_max_days} d)"
@@ -94,8 +108,8 @@ for name, perturbation in models.items():
 
     ax.plot(t_plot/86400, sma, label=label)
 
-ax.plot(IPS_TABLE[:, 0], 6378 + IPS_TABLE[:, 1],
-        label=f"IPS article table (re-entry after {IPS_DECAY_DAYS} d)")
+ax.plot(IPS_TABLE[:, 0], 6378 + IPS_TABLE[:, 1], "ko", markersize=4,
+        label=f"IPS article (re-entry after {IPS_DECAY_DAYS} d)")
 
 ax.set_xlabel("Time [days]")
 ax.set_ylabel("Semi-major axis [km]")
