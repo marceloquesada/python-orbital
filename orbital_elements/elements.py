@@ -136,12 +136,16 @@ def get_period(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
 # ALTERNATIVE ELEMENTS
 def get_argument_of_latitude(r: np.typing.NDArray, v: np.typing.NDArray, mu: float) -> float:
     h = np.cross(r, v)
+    h_hat = h/np.linalg.norm(h)
     n = np.cross(Bases.k, h)
 
-    dot_rn = np.dot(r, n)
-    cross_rn = np.cross(r, n)
+    # Equatorial orbits: node line undefined, measure from the I axis (consistent with Omega = 0)
+    if np.linalg.norm(n) <= MIN_ALLOWED_VALUE:
+        n = Bases.i
 
-    sigma_rad = np.atan2(np.linalg.norm(cross_rn), dot_rn)
+    # Signed angle from n to r, measured in the direction of motion (about h): range [0, 360)
+    sigma_rad = np.atan2(np.dot(np.cross(n, r), h_hat), np.dot(n, r))
+    sigma_rad = np.mod(sigma_rad, 2*np.pi)
 
     sigma_deg = np.rad2deg(sigma_rad)
 

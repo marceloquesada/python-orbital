@@ -40,8 +40,8 @@ oes_0 = np.array([constants.radius_earth + 300, 0.0, 0.0, 0.0, 0.0, 0.0])
 
 t_max_days = 100        # Upper bound; each run stops at re-entry
 t_step = 50             # Propagator time grid; also the maximum integrator step [s]
-t_sample = 600          # Plot sampling [s], multiple of t_step
-reentry_altitude = 180  # Stop when the orbital radius drops below R_earth + this [km] (IPS definition)
+t_sample = 50           # Plot sampling [s], multiple of t_step
+reentry_altitude = 170  # Stop when the orbital radius drops below R_earth + this [km] (IPS definition)
 
 # IPS article output table: (time [days], height [km]); heights are a - R_e with R_e = 6378 km
 IPS_TABLE = np.array([[0.0, 300.0], [10.5, 289.9], [19.5, 279.9], [26.3, 269.9], [31.5, 259.9],
@@ -57,7 +57,7 @@ IPS_DECAY_DAYS = 46
 
 models = {
     # "Exponential (USSA76, Curtis)": atmospheric_drag.Atmospheric_drag_perturbation_exp(drag_coef, gamma),
-    "IPS": atmospheric_drag.Atmospheric_drag_perturbation_ips(
+    "Simulação": atmospheric_drag.Atmospheric_drag_perturbation_ips(
         drag_coef, gamma, f107, ap, rotating_atmosphere=ips_rotating_atmosphere,
         emulate_article_rounding=ips_emulate_article_rounding)
 }
@@ -101,20 +101,19 @@ for name, perturbation in models.items():
         sma = 6378 + atmospheric_drag.ips_article_altitude(sma - constants.radius_earth)
 
     if t_reentry is None:
-        label = f"{name} (no re-entry in {t_max_days} d)"
+        label = f"{name} (sem reentrada em {t_max_days} d)"
     else:
-        label = f"{name}: re-entry at {t_reentry/86400:.1f} d"
+        label = f"{name} (reentrada em {t_reentry/86400:.1f} d)"
     print(f"{label}  [{time.time() - start:.0f} s]")
 
     ax.plot(t_plot/86400, sma, label=label)
 
 ax.plot(IPS_TABLE[:, 0], 6378 + IPS_TABLE[:, 1], "ko", markersize=4,
-        label=f"IPS article (re-entry after {IPS_DECAY_DAYS} d)")
+        label=f"Artigo (reentrada em {IPS_DECAY_DAYS} d)")
 
-ax.set_xlabel("Time [days]")
-ax.set_ylabel("Semi-major axis [km]")
-ax.set_title(f"Semi-major axis decay, 300 km circular, $C_D A/m$ = {effective_area/mass} m²/kg, "
-             f"F10.7 = {f107}, Ap = {ap}")
+ax.set_xlabel("Tempo [dias]")
+ax.set_ylabel("Semieixo maior [km]")
+ax.set_title(f"Decaimento do semieixo maior por arrasto atmosférico")
 ax.grid(True, alpha=0.3)
 ax.legend(loc="upper right")
 fig.tight_layout()

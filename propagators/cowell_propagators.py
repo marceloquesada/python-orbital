@@ -55,7 +55,12 @@ class Unperturbed_propagator:
 
         return xdot
 
-    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45') -> np.typing.NDArray:
+    def propagate(self, t: np.typing.NDArray, periods: float = None, integration_method: str = 'RK45',
+                  **solver_options) -> np.typing.NDArray:
+        """
+        solver_options are forwarded to scipy's solve_ivp (e.g. rtol, atol, max_step).
+        max_step defaults to the mean spacing of t.
+        """
         r = self.state_vector_0[0:3]
         v = self.state_vector_0[3:6]
 
@@ -76,6 +81,8 @@ class Unperturbed_propagator:
         
         self.progress_bar = tqdm(total=round(t[-1] - t[0] + 1))
 
+        options = {"max_step": np.mean(np.diff(t))}
+        options.update(solver_options)
 
         solution = solve_ivp(
             self._x_dot,
@@ -83,7 +90,7 @@ class Unperturbed_propagator:
             self.state_vector_0,
             t_eval=t,
             method=integration_method,
-            max_step=np.mean(np.diff(t))
+            **options
         )
 
         X = solution.y
@@ -116,9 +123,8 @@ class Perturbed_propagator:
         xdot[0:3] = x[3:6]
         a = -(self.mu/(np.linalg.norm(x[0:3]))**3)*x[0:3]
         
-        dt = t - self.first_t
         for perturbation in self.perturbations:
-            a += perturbation.get_acceleration(x, dt)
+            a += perturbation.get_acceleration(x, t)
 
         xdot[3:6] = a
 
@@ -149,14 +155,19 @@ class Perturbed_propagator:
         options = {"max_step": np.max(np.diff(t))}
         options.update(solver_options)
 
-        solution = solve_ivp(
-                    self._x_dot,
-                    (t[0], t[-1]),
-                    self.state_vector_0,
-                    t_eval=t,
-                    method=integration_method,
-                    **options
-                )
+        try:
+            solution = solve_ivp(
+                        self._x_dot,
+                        (t[0], t[-1]),
+                        self.state_vector_0,
+                        t_eval=t,
+                        method=integration_method,
+                        **options
+                    )
+        finally:
+            # Close explicitly: an unclosed tqdm is torn down during interpreter shutdown,
+            # which segfaults when a Qt matplotlib backend is loaded
+            self.progress_bar.close()
         self.solution = solution
         X = solution.y
 

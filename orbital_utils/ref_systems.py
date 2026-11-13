@@ -1,5 +1,7 @@
 import numpy as np
 
+from orbital_elements import elements
+
 
 def get_base_versors(state_vector):
     r_hat = np.linalg.norm(state_vector[0:3])
@@ -108,3 +110,28 @@ def orbital_to_inertial(points_orbital: np.typing.NDArray, orbital_elements: np.
     points_inertial = rotation_matrix @ points_orbital  # @ é equivalente ao produto matricial
 
     return points_inertial
+
+
+# LVLH (orbital frame from a state vector): x radial, y along-track, z orbit normal
+def lvlh_to_inertial_matrix(state_vector: np.typing.NDArray, mu: float) -> np.typing.NDArray:
+    """
+    Rotation matrix LVLH -> inertial, Rz(Omega) @ Rx(i) @ Rz(u), from the reference state vector.
+
+    Same frame as orbital_to_inertial, but uses the argument of latitude u instead of omega + theta,
+    so it stays defined for circular and equatorial orbits.
+    """
+    r, v = state_vector[0:3], state_vector[3:6]
+
+    i = elements.get_inclination(r, v, mu)
+    Omega = elements.get_ascending_node(r, v, mu)
+    u = elements.get_argument_of_latitude(r, v, mu)
+
+    return rot_Z(Omega) @ rot_X(i) @ rot_Z(u)
+
+
+def lvlh_to_inertial(points_lvlh: np.typing.NDArray, state_vector: np.typing.NDArray, mu: float):
+    return lvlh_to_inertial_matrix(state_vector, mu) @ points_lvlh
+
+
+def inertial_to_lvlh(points_inertial: np.typing.NDArray, state_vector: np.typing.NDArray, mu: float):
+    return lvlh_to_inertial_matrix(state_vector, mu).T @ points_inertial
